@@ -1,0 +1,3045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f4fb">
+<title>音律 · 听音练耳与识谱训练台</title>
+<style>
+/* ============================================================
+   1. 设计系统
+   ============================================================ */
+:root{
+  --bg:#f3f4fb;
+  --bg-2:#eceef8;
+  --surface:#ffffff;
+  --surface-2:#fafbff;
+  --surface-3:#f1f2fb;
+  --line:#e4e6f3;
+  --line-2:#d5d8ea;
+  --text:#1b1c2e;
+  --text-2:#4a4d68;
+  --muted:#7b7f9c;
+  --brand:#5b53e8;
+  --brand-2:#7c6cf5;
+  --brand-soft:#eeecff;
+  --brand-line:#cdc8ff;
+  --ok:#0f9d76;
+  --ok-soft:#e4f7f0;
+  --bad:#e5484d;
+  --bad-soft:#fdecec;
+  --warn:#e08a0b;
+  --warn-soft:#fdf3e2;
+  --ink:#12132a;
+  --radius:18px;
+  --radius-sm:12px;
+  --shadow-1:0 1px 2px rgba(20,20,60,.05), 0 10px 26px -16px rgba(20,20,60,.28);
+  --shadow-2:0 2px 6px rgba(20,20,60,.06), 0 22px 48px -26px rgba(20,20,60,.32);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);
+  color:var(--text);
+  background:
+    radial-gradient(1100px 520px at 12% -12%, #e8e6ff 0%, rgba(232,230,255,0) 62%),
+    radial-gradient(900px 500px at 106% 4%, #e2f4ef 0%, rgba(226,244,239,0) 58%),
+    var(--bg);
+  min-height:100vh;
+  min-height:100dvh;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
+p{margin:0}
+::-webkit-scrollbar{height:9px;width:9px}
+::-webkit-scrollbar-thumb{background:#c9cbe2;border-radius:9px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ============================================================
+   2. 骨架
+   ============================================================ */
+.app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:12px;
+  padding:10px clamp(12px,2.4vw,26px);
+  background:rgba(250,250,255,.82);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-mark{
+  width:34px;height:34px;border-radius:11px;flex:none;
+  background:linear-gradient(140deg,var(--brand) 10%,var(--brand-2) 70%,#b3aaff);
+  display:grid;place-items:center;color:#fff;font-size:17px;
+  box-shadow:0 6px 16px -6px rgba(91,83,232,.7);
+}
+.brand-txt{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.brand-txt b{font-size:15px;letter-spacing:-.02em}
+.brand-txt span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabs{display:flex;gap:4px;margin-left:auto;background:var(--surface-3);padding:4px;border-radius:999px;border:1px solid var(--line)}
+.tabs button{
+  padding:7px 15px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--muted);
+  transition:.16s;white-space:nowrap;
+}
+.tabs button.on{background:var(--surface);color:var(--brand);box-shadow:0 1px 4px rgba(30,30,80,.1)}
+.iconbtn{
+  width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--line);color:var(--text-2);transition:.16s;
+}
+.iconbtn:hover{border-color:var(--line-2);color:var(--brand)}
+main{flex:1;min-height:0}
+.view{display:none}
+.view.on{display:block;animation:fade .28s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   3. 练习视图布局
+   ============================================================ */
+.layout{
+  display:grid;grid-template-columns:296px minmax(0,1fr);
+  gap:16px;align-items:start;
+  max-width:1280px;margin:0 auto;padding:16px clamp(12px,2.4vw,26px) 28px;
+}
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-1);overflow:hidden;
+}
+.panel-head{
+  display:flex;align-items:center;gap:8px;padding:13px 15px;
+  border-bottom:1px solid var(--line);background:var(--surface-2);
+}
+.panel-head h2{font-size:13.5px;letter-spacing:.02em;color:var(--text-2)}
+.panel-body{padding:14px 15px 18px;display:flex;flex-direction:column;gap:15px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field>label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em;display:flex;align-items:center;gap:6px}
+.field>label .hint{font-weight:400;letter-spacing:0}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.45}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.sel{
+  flex:1;appearance:none;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:10px;padding:8px 30px 8px 11px;font-size:13px;color:var(--text);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237b7f9c' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.sel:focus{outline:2px solid var(--brand-line);outline-offset:1px}
+.btn{
+  border-radius:11px;padding:8px 14px;font-size:13px;font-weight:600;
+  border:1px solid var(--line);background:var(--surface);color:var(--text-2);
+  transition:.16s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;justify-content:center;
+}
+.btn:hover{border-color:var(--line-2);background:var(--surface-3)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand-2));border-color:transparent;color:#fff;box-shadow:0 8px 20px -10px rgba(91,83,232,.9)}
+.btn.primary:hover{filter:brightness(1.06);background:linear-gradient(135deg,var(--brand),var(--brand-2))}
+.btn.soft{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand)}
+.btn.soft:hover{background:#e6e3ff}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--surface-3)}
+.btn.lg{padding:12px 22px;font-size:15px;border-radius:14px}
+.btn:disabled{opacity:.45;pointer-events:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  border:1px solid var(--line);background:var(--surface-2);border-radius:999px;
+  padding:5px 11px;font-size:12px;color:var(--muted);transition:.16s;font-weight:500;
+}
+.chip:hover{border-color:var(--line-2)}
+.chip.on{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand);font-weight:700}
+
+/* 主题配色选择器 */
+.theme-swatches{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.swatch{width:27px;height:27px;border-radius:50%;border:2px solid var(--line);padding:0;cursor:pointer;position:relative;transition:transform .12s ease, box-shadow .12s ease}
+.swatch:hover{transform:scale(1.1)}
+.swatch.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--brand)}
+.swatch.custom{background:var(--surface-3);color:var(--muted);border-style:dashed;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center}
+.theme-color{width:44px;height:30px;padding:2px;border:1px solid var(--line-2);border-radius:9px;background:var(--surface);cursor:pointer}
+.theme-color::-webkit-color-swatch-wrapper{padding:0}
+.theme-color::-webkit-color-swatch{border:0;border-radius:6px}
+.chip .sub{opacity:.6;font-size:10.5px;margin-left:3px}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+/* ============================================================
+   4. 舞台
+   ============================================================ */
+.stage{display:flex;flex-direction:column;gap:14px;min-width:0}
+.navwrap{display:flex;flex-direction:column;gap:9px;min-width:0}
+.grouptabs{
+  display:flex;gap:6px;padding:5px;background:var(--surface);
+  border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-1);
+}
+.grouptab{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:7px;
+  padding:9px 12px;border-radius:12px;font-size:13.5px;font-weight:700;
+  color:var(--muted);transition:.18s;white-space:nowrap;min-width:0;
+}
+.grouptab .gi{font-size:15px}
+.grouptab:hover{color:var(--text-2)}
+.grouptab.on{
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;
+  box-shadow:0 8px 18px -10px rgba(91,83,232,.95);
+}
+.modebar{
+  display:flex;gap:8px;overflow-x:auto;padding:5px;background:var(--surface);
+  border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-1);
+  scrollbar-width:none;
+}
+.modebar::-webkit-scrollbar{display:none}
+.modebar button{
+  flex:1 0 auto;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;
+  font-size:13.5px;font-weight:600;color:var(--muted);transition:.18s;white-space:nowrap;
+}
+.modebar button .mi{
+  width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:none;
+  background:var(--surface-3);font-size:13px;color:var(--text-2);transition:.18s;
+}
+.modebar button.on{background:var(--brand-soft);color:var(--brand)}
+.modebar button.on .mi{background:var(--brand);color:#fff}
+
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-1);padding:16px;
+}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.tag{
+  font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;
+  background:var(--brand-soft);color:var(--brand);letter-spacing:.02em;
+}
+.tag.gray{background:var(--surface-3);color:var(--muted)}
+.spacer{margin-left:auto}
+
+/* 进度 */
+.progress-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bar{flex:1;height:7px;border-radius:9px;background:var(--surface-3);overflow:hidden;min-width:110px}
+.bar>i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .35s ease}
+.stat-mini{display:flex;gap:14px;font-size:12px;color:var(--muted);white-space:nowrap}
+.stat-mini b{color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
+.stat-mini .ok b{color:var(--ok)}
+.stat-mini .bad b{color:var(--bad)}
+
+/* 题目视觉 */
+.qvisual{
+  min-height:132px;border-radius:14px;background:var(--surface-2);
+  border:1px dashed var(--line-2);display:grid;place-items:center;padding:12px;
+  position:relative;overflow:hidden;
+}
+.orb{
+  width:96px;height:96px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#fff 0%,#c9c3ff 32%,var(--brand) 78%);
+  opacity:.9;box-shadow:0 0 0 0 rgba(91,83,232,.4);
+}
+.orb.playing{animation:pulse 1s ease-out infinite}
+@keyframes pulse{
+  0%{transform:scale(.94);box-shadow:0 0 0 0 rgba(91,83,232,.42)}
+  70%{transform:scale(1.06);box-shadow:0 0 0 26px rgba(91,83,232,0)}
+  100%{transform:scale(.94);box-shadow:0 0 0 0 rgba(91,83,232,0)}
+}
+.orb.idle{opacity:.35;filter:grayscale(.4)}
+.qvisual .prompt{position:absolute;bottom:10px;font-size:12px;color:var(--muted)}
+.qvisual svg{display:block;width:100%;max-width:420px;height:auto}
+.notechips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.nc{
+  background:var(--brand-soft);color:var(--brand);border-radius:9px;padding:5px 10px;
+  font-size:13px;font-weight:700;font-family:var(--mono);
+}
+.nc.plain{background:var(--surface-3);color:var(--text-2)}
+
+/* 操作 */
+.qactions{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+.qactions .btn{flex:1 1 auto}
+.refbtn{
+  display:flex;align-items:center;gap:9px;font-weight:700;color:var(--warn);
+  background:var(--warn-soft);border-color:#f6dfb4;border-radius:11px;padding:8px 14px;font-size:13px;
+  transition:.16s;
+}
+.refbtn:hover{background:#fceacd}
+.refbtn.live{animation:pulseRef .9s ease-in-out infinite}
+@keyframes pulseRef{0%,100%{box-shadow:0 0 0 0 rgba(224,138,11,.35)}50%{box-shadow:0 0 0 8px rgba(224,138,11,0)}}
+.refval{font-family:var(--mono);font-size:12.5px;background:#fff;border-radius:7px;padding:1px 7px;border:1px solid #f0dcb8}
+
+/* 作答区 */
+.answer-area{display:flex;flex-direction:column;gap:10px}
+.opt-grid{display:grid;gap:8px}
+.opt-grid.g12{grid-template-columns:repeat(6,minmax(0,1fr))}
+.opt-grid.g7{grid-template-columns:repeat(7,minmax(0,1fr))}
+.opt-grid.g13{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.opt-grid.gc{grid-template-columns:repeat(auto-fill,minmax(116px,1fr))}
+.opt{
+  border:1px solid var(--line);background:var(--surface);border-radius:12px;
+  padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:1px;
+  transition:.14s;min-width:0;
+}
+.opt:hover{border-color:var(--brand-line);background:var(--brand-soft);transform:translateY(-1px)}
+.opt.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+.opt.on span{color:var(--brand)}
+.opt b{font-size:15px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.opt span{font-size:10.5px;color:var(--muted);letter-spacing:.02em;white-space:nowrap}
+.opt.small b{font-size:13px}
+.opt.correct{background:var(--ok-soft);border-color:#9fdcc7;color:var(--ok)}
+.opt.correct span{color:#0b7d5d}
+.opt.wrong{background:var(--bad-soft);border-color:#f3b6b8;color:var(--bad);animation:shake .3s}
+.opt.wrong span{color:#b8383c}
+.opt.dim{opacity:.42}
+/* 已交卷：选项不再有可点感 */
+.opt.correct,.opt.wrong,.opt.dim{cursor:default}
+.opt.correct:hover{background:var(--ok-soft);border-color:#9fdcc7;transform:none}
+.opt.wrong:hover{background:var(--bad-soft);border-color:#f3b6b8;transform:none}
+.opt.dim:hover{background:var(--surface);border-color:var(--line);transform:none}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* 反馈 */
+.feedback{
+  border-radius:14px;padding:13px 15px;display:flex;flex-direction:column;gap:7px;
+  border:1px solid;animation:fade .22s ease;
+}
+.feedback.ok{background:var(--ok-soft);border-color:#a9e0cd}
+.feedback.bad{background:var(--bad-soft);border-color:#f2bcbe}
+.fb-top{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px}
+.feedback.ok .fb-top{color:var(--ok)}
+.feedback.bad .fb-top{color:var(--bad)}
+.fb-icon{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:14px;flex:none}
+.feedback.ok .fb-icon{background:var(--ok)}
+.feedback.bad .fb-icon{background:var(--bad)}
+.fb-body{font-size:13px;color:var(--text-2);line-height:1.6}
+.fb-body code{
+  font-family:var(--mono);background:#fff;border:1px solid var(--line);border-radius:6px;
+  padding:1px 6px;font-size:12.5px;color:var(--text);
+}
+.fb-actions{display:flex;gap:8px;margin-top:3px;flex-wrap:wrap}
+
+/* 键盘 */
+.kbwrap{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow-1);padding:12px 12px 8px;
+}
+.kbhead{display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+.kbhead h3{font-size:13px;color:var(--text-2)}
+.kbscroll{overflow-x:auto;overflow-y:hidden;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.keyboard{position:relative;height:clamp(112px,20vh,158px);touch-action:pan-x}
+.key{
+  position:absolute;bottom:0;display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:7px;font-size:10.5px;font-weight:600;user-select:none;-webkit-user-select:none;
+  transition:background .1s,filter .1s;font-variant-numeric:tabular-nums;
+}
+.key.white{
+  height:100%;background:linear-gradient(#fff,#eef0f9);border:1px solid #d3d6e8;
+  border-radius:0 0 8px 8px;color:#9a9eba;z-index:1;box-shadow:0 2px 0 rgba(30,30,80,.06);
+}
+.key.black{
+  height:61%;background:linear-gradient(#4a4e6e,#191a2b);border:1px solid #0f1019;
+  border-radius:0 0 6px 6px;color:#c8cbdf;z-index:2;box-shadow:0 3px 5px rgba(10,10,30,.3);
+}
+.key.lit{filter:none;background:linear-gradient(var(--brand-2),var(--brand));border-color:var(--brand);color:#fff}
+.key.correct{background:linear-gradient(#63d8ab,#17a877);border-color:#0f9668;color:#fff}
+.key.wrong{background:linear-gradient(#ff9ba0,#dd3f45);border-color:#c9363c;color:#fff}
+.key.dim{opacity:.4}
+.key.clickable{cursor:pointer}
+.key.clickable:active{background:var(--brand-soft);border-color:var(--brand-line)}
+.kbhint{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+.reveal-staff{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;width:100%;max-width:470px;margin:0 auto;
+}
+.reveal-staff svg{max-width:100%}
+/* 开始卡片 */
+.startcard{
+  display:flex;flex-direction:column;gap:16px;
+  background:
+    radial-gradient(600px 240px at 88% -30%, #ece9ff 0%, rgba(236,233,255,0) 70%),
+    var(--surface);
+}
+.start-hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.start-hero .badge{
+  width:60px;height:60px;border-radius:18px;flex:none;display:grid;place-items:center;font-size:26px;
+  background:linear-gradient(140deg,var(--brand),var(--brand-2));color:#fff;
+  box-shadow:0 14px 30px -14px rgba(91,83,232,.9);
+}
+.start-hero h2{font-size:20px;letter-spacing:-.02em}
+.start-hero p{font-size:13px;color:var(--muted);margin-top:3px}
+.summary-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px}
+.sum-item{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.sum-item dt{font-size:11px;color:var(--muted);margin-bottom:2px}
+.sum-item dd{margin:0;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.howto{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  font-size:12.5px;color:var(--text-2);line-height:1.75;
+}
+.howto b{color:var(--brand)}
+.kbd{
+  font-family:var(--mono);background:#fff;border:1px solid var(--line-2);
+  border-bottom-width:2px;border-radius:6px;padding:0 5px;font-size:11.5px;
+}
+
+/* 结算 */
+.result-hero{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.ring{position:relative;flex:none;width:106px;height:106px}
+.ring svg{display:block;width:100%;height:100%;transform:rotate(-90deg)}
+.ring .rc{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 15px;text-align:center;
+}
+.ring .rc b{display:block;font-size:18px;line-height:1;font-weight:800;letter-spacing:-.03em}
+.ring .rc small{display:block;margin-top:4px;font-size:10px;line-height:1;color:var(--muted);font-weight:600;letter-spacing:.06em}
+
+/* 答题结果区（位于键盘下方，避免作答区高度跳变） */
+.resultbox{display:flex;flex-direction:column;gap:0}
+.resultbox .feedback{border-radius:14px}
+.countdown{margin-top:11px;height:4px;border-radius:4px;background:rgba(20,20,60,.09);overflow:hidden}
+.countdown i{
+  display:block;height:100%;width:100%;border-radius:4px;
+  background:linear-gradient(90deg,#5bd0a5,var(--ok));
+  animation:cdShrink linear forwards;
+}
+@keyframes cdShrink{from{width:100%}to{width:0}}
+.tip-listen{
+  font-size:12px;line-height:1.65;color:var(--muted);
+  margin-top:9px;padding:8px 11px;border-radius:10px;background:var(--surface-2);
+  border:1px dashed var(--line-2);
+}
+.tip-listen b{color:var(--brand)}
+
+/* ============================================================
+   5. 记录视图
+   ============================================================ */
+.records{max-width:1280px;margin:0 auto;padding:16px clamp(12px,2.4vw,26px) 40px;display:flex;flex-direction:column;gap:14px}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;
+  box-shadow:var(--shadow-1);
+}
+.kpi dt{font-size:11.5px;color:var(--muted);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.kpi dd{margin:0;font-size:23px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.kpi dd small{font-size:12px;font-weight:600;color:var(--muted);margin-left:2px}
+.kpi .delta{font-size:11.5px;margin-top:3px;font-weight:600}
+.kpi .delta.up{color:var(--ok)}
+.kpi .delta.down{color:var(--bad)}
+.cols{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px}
+.card.slim{padding:14px}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+.chart-svg{width:100%;height:auto;display:block;overflow:visible}
+.empty{
+  padding:26px 18px;text-align:center;color:var(--muted);font-size:13px;
+  border:1px dashed var(--line-2);border-radius:12px;background:var(--surface-2);
+}
+.hbar{display:flex;flex-direction:column;gap:9px}
+.hbar .hrow{display:grid;grid-template-columns:78px minmax(0,1fr) 62px;gap:9px;align-items:center;font-size:12.5px}
+.hbar .hlabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.hbar .hrow.clickable{cursor:pointer;border-radius:8px;padding:4px 6px;margin:-4px -6px;transition:background .15s}
+.hbar .hrow.clickable:hover{background:var(--surface-3)}
+.hbar .hrow.clickable .hlabel{color:var(--brand);text-decoration:underline dotted;text-underline-offset:3px}
+.rec-sub{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.03em;margin:13px 0 8px}
+.rec-sub:first-child{margin-top:0}
+.conflist{display:flex;flex-direction:column;gap:6px}
+.confline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);min-width:0}
+.confline code{font-family:var(--mono);background:var(--surface-3);border:1px solid var(--line);border-radius:6px;padding:1px 7px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.confline code.bad{background:var(--bad-soft);border-color:#f3b6b8;color:var(--bad)}
+.confline .arrow{color:var(--muted);flex:none}
+.confline .n{margin-left:auto;flex:none;font-weight:700;color:var(--bad);font-variant-numeric:tabular-nums}
+.qrow .qmode{font-style:normal;font-size:10px;color:var(--brand);background:var(--brand-soft);border-radius:5px;padding:1px 5px;margin-right:6px}
+.hbar .track{height:9px;border-radius:6px;background:var(--surface-3);overflow:hidden}
+.hbar .track i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#8b80f5,var(--brand))}
+.hbar .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--text-2);font-weight:600}
+.activity{display:flex;gap:5px;align-items:stretch;height:92px}
+.activity .acol{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.activity .abox{
+  flex:1;width:100%;max-width:24px;display:flex;align-items:flex-end;
+  background:var(--surface-3);border-radius:5px;overflow:hidden;
+}
+.activity .abox i{
+  display:block;width:100%;min-height:3px;border-radius:4px;
+  background:linear-gradient(180deg,var(--brand-2),var(--brand));
+}
+.activity .acol b{font-size:9.5px;color:var(--muted);font-weight:500;white-space:nowrap;line-height:1.2}
+.history{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow:auto}
+.history>.hitem{flex:0 0 auto}
+.hitem{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface-2);overflow:hidden;
+}
+.hitem>.hrow2{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;flex-wrap:wrap;width:100%;text-align:left;
+}
+.hitem .hdate{font-size:12px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+.hitem .hmode{font-size:11.5px;font-weight:700;color:var(--brand);background:var(--brand-soft);border-radius:7px;padding:2px 8px;white-space:nowrap}
+.hitem .hscore{font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--text-2);white-space:nowrap}
+.hitem .hacc{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;white-space:nowrap}
+.hitem .chev{color:var(--muted);font-size:11px;transition:.2s}
+.hitem.open .chev{transform:rotate(180deg)}
+.hdetail{display:none;padding:0 12px 12px;border-top:1px solid var(--line);margin-top:-1px}
+.hitem.open .hdetail{display:block}
+.qlist{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.qrow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:9px;align-items:center;font-size:12px;padding:5px 7px;border-radius:8px}
+.qrow:nth-child(odd){background:var(--surface-3)}
+.qrow .qi{width:19px;height:19px;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700}
+.qrow.ok .qi{background:var(--ok)}
+.qrow.no .qi{background:var(--bad)}
+.qrow .qq{color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qrow .qt{color:var(--muted);font-family:var(--mono);font-size:11px;white-space:nowrap}
+.danger{color:var(--bad)}
+.row-wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);
+  background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;
+  box-shadow:var(--shadow-2);opacity:0;pointer-events:none;transition:.28s;z-index:99;max-width:88vw;text-align:center;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ============================================================
+   5b. 工具页
+   ============================================================ */
+.tools{
+  max-width:1280px;margin:0 auto;padding:16px clamp(12px,2.4vw,26px) 34px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;align-items:stretch}
+.tools-grid > .card{display:flex;flex-direction:column}
+.tools-grid > .card > :last-child{margin-top:auto}
+@media (min-width:1180px){
+  .tools-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.tool-readout{
+  display:flex;align-items:baseline;gap:10px;justify-content:center;flex-wrap:wrap;
+  padding:11px 14px;margin:10px 0 8px;border-radius:12px;
+  background:linear-gradient(180deg,var(--brand-soft),var(--surface-2));
+  border:1px solid var(--brand-line);
+}
+.tool-readout b{
+  font-size:24px;font-weight:800;letter-spacing:-.03em;color:var(--brand);
+  font-variant-numeric:tabular-nums;
+}
+.tool-readout span{font-size:12.5px;color:var(--muted)}
+.tools-grid .opt-grid.g13{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.tools-grid .opt-grid.gc{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+/* 播放内容展示条：显示本次播放的所有音，并随发声依次点亮 */
+.note-strip{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;
+  min-height:40px;padding:8px 11px;margin-top:11px;
+  border-radius:11px;background:var(--surface-2);border:1px dashed var(--line-2);
+}
+.note-strip .nc{transition:background .12s,color .12s,transform .12s}
+.note-strip .nc.on{background:var(--brand);color:#fff;transform:translateY(-1px)}
+.note-strip .hint{margin:0;text-align:center}
+/* 工具卡内的纵向节奏 */
+.qactions + .note-strip{margin-top:11px}
+.note-strip + .hint,.qactions + .hint{margin-top:12px}
+.tool-staff-box{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;display:grid;place-items:center;min-height:112px;
+}
+.fb-msg{font-size:12.5px;font-weight:600;min-height:19px;margin-top:9px}
+.fb-msg.ok{color:var(--ok)}
+.fb-msg.bad{color:var(--bad)}
+
+/* ============================================================
+   6. 响应式
+   ============================================================ */
+.only-phone{display:none}
+
+@media (max-width:1080px){
+  .cols{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:940px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:12px}
+  .only-phone{display:inline-flex}
+  .panel-head{cursor:pointer}
+  .panel.collapsed .panel-body{display:none}
+  .opt-grid.g13{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .opt-grid.gc{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  body{font-size:14.5px}
+  .layout{padding:12px 11px 22px;gap:11px}
+  .card{padding:13px;border-radius:16px}
+  .brand-txt span{display:none}
+  .tabs button{padding:7px 12px;font-size:13px}
+  .opt-grid.g12{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .opt-grid.g7{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .opt-grid.g13{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .opt-grid.gc{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .opt b{font-size:14px}
+  .modebar button{padding:9px 12px;font-size:13px}
+  .modebar button .mi{display:none}
+  .qvisual{min-height:112px}
+  .start-hero h2{font-size:17.5px}
+  .activity{height:70px}
+  .hbar .hrow{grid-template-columns:56px minmax(0,1fr) 56px;font-size:12px}
+  .tools{padding:12px 11px 26px;gap:11px}
+  .tools-grid{grid-template-columns:minmax(0,1fr)}
+  .tool-readout b{font-size:21px}
+  .grouptab{padding:8px 9px;font-size:12.5px}
+  .grouptab .gi{font-size:13.5px}
+}
+/* 手机横屏：拆成左右两栏（左=题目/谱面，右=作答+键盘），压缩纵向高度 */
+@media (orientation:landscape) and (max-height:620px) and (max-width:1180px){
+  .topbar{padding:5px 14px}
+  .brand-mark{width:28px;height:28px;border-radius:9px;font-size:14px}
+  .brand-txt b{font-size:13px}
+  .layout{
+    grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);
+    padding:8px 12px 12px;gap:9px;align-items:start;
+  }
+  .layout>.panel{grid-column:1 / -1;grid-row:1}
+  .panel-head{padding:9px 13px}
+  .stage{display:contents}
+  .navwrap{grid-column:1 / -1;grid-row:2;gap:6px}
+  .grouptabs{padding:4px;border-radius:13px}
+  .grouptab{padding:6px 10px;font-size:12.5px;border-radius:9px}
+  #stageMain{display:contents}
+  #stageMain>.startcard,#stageMain>.resultcard{grid-column:1 / -1;grid-row:3}
+  #stageMain>.card:nth-child(1):not(.startcard):not(.answer-area):not(.resultcard){grid-column:1;grid-row:3}
+  #stageMain>.card.answer-area{grid-column:1;grid-row:4}
+  #stageMain>.kbwrap{grid-column:2;grid-row:3 / span 2;align-self:start}
+  #stageMain>.resultbox{grid-column:1 / -1;grid-row:5}
+  /* 无键盘（识谱答音名等）时题目与作答区通栏，避免右栏空置 */
+  #stageMain.no-kb>.card:nth-child(1):not(.startcard):not(.answer-area):not(.resultcard),
+  #stageMain.no-kb>.card.answer-area{grid-column:1 / -1}
+  .card{padding:10px 12px;border-radius:14px}
+  .modebar{padding:4px}
+  .modebar button{padding:6px 9px;font-size:12.5px;border-radius:10px}
+  .qvisual{min-height:56px;padding:6px}
+  .qvisual svg{width:auto;height:84px;max-width:100%}
+  .orb{width:48px;height:48px}
+  .keyboard{height:104px}
+  .kbwrap{padding:9px 10px 5px}
+  .kbhead{margin-bottom:5px}
+  .opt{padding:7px 4px}
+  .opt b{font-size:13px}
+  .opt span{font-size:9.5px}
+  .opt-grid.g13{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+  .opt-grid.gc{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+  .opt-grid.g12{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .opt-grid.g7{grid-template-columns:repeat(7,minmax(0,1fr))}
+  .qactions{margin-top:8px}
+  .card-head{margin-bottom:8px}
+  .startcard .howto{display:none}
+  .records{padding:10px 12px 24px;gap:11px}
+  .history{max-height:340px}
+}
+@media (max-width:420px){
+  .opt-grid.g12{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .opt-grid.g7{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">♬</div>
+      <div class="brand-txt">
+        <b>音律</b>
+        <span>听音练耳 · 识谱训练台</span>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button data-view="practice" class="on">练习</button>
+      <button data-view="tools">工具</button>
+      <button data-view="records">记录</button>
+    </nav>
+    <button class="iconbtn" id="btnVol" title="音量">🔊</button>
+  </header>
+
+  <main>
+    <!-- ========== 练习 ========== -->
+    <section class="view on" id="view-practice">
+      <div class="layout">
+        <aside class="panel" id="settingsPanel">
+          <div class="panel-head" id="settingsHead">
+            <h2>⚙︎ 练习设置</h2>
+            <button class="btn ghost only-phone" id="btnToggleSettings" style="margin-left:auto;padding:4px 10px;font-size:12px">收起</button>
+          </div>
+          <div class="panel-body">
+            <div class="field">
+              <label>基准音 <span class="hint">练习开始/需要时播放</span></label>
+              <div class="row">
+                <select class="sel" id="selRef"></select>
+                <button class="btn" id="btnTestRef">试听</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>音高范围</label>
+              <div class="row">
+                <select class="sel" id="selLow"></select>
+                <span style="color:var(--muted)">–</span>
+                <select class="sel" id="selHigh"></select>
+              </div>
+              <div class="chips">
+                <button class="chip" data-range="12">一个八度</button>
+                <button class="chip" data-range="19">人声区</button>
+                <button class="chip" data-range="24">两个八度</button>
+                <button class="chip" data-range="36">三个八度</button>
+              </div>
+              <p class="hint" id="rangeHint"></p>
+            </div>
+
+            <div class="field" id="modeOpts"></div>
+
+            <div class="field">
+              <label>播放与节奏</label>
+              <div class="stack">
+                <div class="row">
+                  <span class="hint" style="width:60px;flex:none">音色</span>
+                  <select class="sel" id="selTimbre">
+                    <option value="piano">钢琴</option>
+                    <option value="sine">纯音</option>
+                    <option value="organ">风琴</option>
+                  </select>
+                </div>
+                <div class="chips" id="chipsRefMode">
+                  <button class="chip" data-refmode="once">仅开始时给基准音</button>
+                  <button class="chip" data-refmode="each">每题前给基准音</button>
+                </div>
+                <div class="row">
+                  <span class="hint" style="width:60px;flex:none">题数</span>
+                  <select class="sel" id="selRound">
+                    <option value="10">10 题</option>
+                    <option value="15">15 题</option>
+                    <option value="20">20 题</option>
+                    <option value="30">30 题</option>
+                    <option value="0">不限（手动结束）</option>
+                  </select>
+                </div>
+                <div class="chips" id="chipsExtra">
+                  <button class="chip" data-flag="autoNext">答对自动下一题</button>
+                  <button class="chip" data-flag="showKeyNames">键盘标注音名</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>主题配色</label>
+              <div class="theme-swatches" id="themeSwatches"></div>
+              <div class="row" style="margin-top:10px">
+                <span class="hint" style="width:auto;flex:none">自定义主色</span>
+                <input type="color" id="selTheme" class="theme-color" value="#5b53e8">
+              </div>
+            </div>
+
+            <button class="btn" id="btnResetSettings" style="justify-content:center">恢复默认设置</button>
+          </div>
+        </aside>
+
+        <div class="stage">
+          <div class="navwrap">
+            <div class="grouptabs" id="groupTabs"></div>
+            <div class="modebar" id="modebar"></div>
+          </div>
+          <div id="stageMain"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 工具 ========== -->
+    <section class="view" id="view-tools">
+      <div class="tools" id="toolsRoot"></div>
+    </section>
+
+    <!-- ========== 记录 ========== -->
+    <section class="view" id="view-records">
+      <div class="records" id="recordsRoot"></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="fileImport" accept="application/json,.json" hidden>
+
+<script>
+"use strict";
+/* ============================================================================
+   音律 — 听音练耳与识谱训练台
+   模块：常量 / 存储 / 音频 / 五线谱 / 出题 / 视图 / 统计
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- 1. 常量 */
+const PC_NAMES = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const SOLFEGE  = ['do','di','re','ri','mi','fa','fi','sol','si','la','li','ti'];
+const BLACK_PC = [1,3,6,8,10];
+const MAJOR_IV = [0,2,4,5,7,9,11];
+
+/* 练习模块：分「练耳（听觉）」与「识谱（视觉）」两大类 */
+const MODES = {
+  single:    {name:'单音',     icon:'♪',  group:'ear',  desc:'听出单个音的音名或音级'},
+  interval:  {name:'音程',     icon:'♫',  group:'ear',  desc:'听出两个音之间的音程'},
+  block:     {name:'柱式和弦', icon:'♬',  group:'ear',  desc:'同时发声，听辨和弦性质'},
+  arp:       {name:'分解和弦', icon:'♩',  group:'ear',  desc:'依次发声，听辨和弦性质'},
+  readnote:  {name:'认音',     icon:'𝄞', group:'read', readType:'note',     desc:'看五线谱说出音名'},
+  readiv:    {name:'辨音程',   icon:'𝄢', group:'read', readType:'interval', desc:'看谱面判断两音的音程'},
+  readchord: {name:'辨和弦',   icon:'🎼', group:'read', readType:'chord',    desc:'看谱面判断和弦性质'},
+  read:      {name:'识谱练习', icon:'𝄞', group:'read', legacy:true, desc:'（旧版本模块）'}
+};
+const MODE_GROUPS = [
+  {id:'ear',  name:'练耳训练', icon:'🎧', desc:'先给基准音，靠听觉辨认'},
+  {id:'read', name:'识谱训练', icon:'🎼', desc:'看谱辨认，可随时试听校对'}
+];
+function groupOf(mode){ const m = MODES[mode]; return (m && m.group) || 'ear'; }
+function modesOf(group){ return Object.keys(MODES).filter(k => MODES[k].group === group && !MODES[k].legacy); }
+function modeInfo(mode){ return MODES[mode] || MODES.single; }
+/* 识谱类模块的题型 */
+function readTypeOf(mode){
+  if (mode === 'readiv') return 'interval';
+  if (mode === 'readchord') return 'chord';
+  if (mode === 'readnote') return 'note';
+  return Store.settings.readType || 'note';   // 旧数据兼容
+}
+
+const INTERVALS = [
+  {s:1, cn:'小二度', ab:'m2'}, {s:2, cn:'大二度', ab:'M2'},
+  {s:3, cn:'小三度', ab:'m3'}, {s:4, cn:'大三度', ab:'M3'},
+  {s:5, cn:'纯四度', ab:'P4'}, {s:6, cn:'增四度', ab:'A4'},
+  {s:7, cn:'纯五度', ab:'P5'}, {s:8, cn:'小六度', ab:'m6'},
+  {s:9, cn:'大六度', ab:'M6'}, {s:10,cn:'小七度', ab:'m7'},
+  {s:11,cn:'大七度', ab:'M7'}, {s:12,cn:'纯八度', ab:'P8'}
+];
+
+const CHORDS = [
+  {id:'maj',  cn:'大三和弦', ab:'M',      iv:[0,4,7]},
+  {id:'min',  cn:'小三和弦', ab:'m',      iv:[0,3,7]},
+  {id:'aug',  cn:'增三和弦', ab:'aug',    iv:[0,4,8]},
+  {id:'dim',  cn:'减三和弦', ab:'dim',    iv:[0,3,6]},
+  {id:'sus2', cn:'挂二和弦', ab:'sus2',   iv:[0,2,7]},
+  {id:'sus4', cn:'挂四和弦', ab:'sus4',   iv:[0,5,7]},
+  {id:'maj7', cn:'大七和弦', ab:'maj7',   iv:[0,4,7,11]},
+  {id:'dom7', cn:'属七和弦', ab:'7',      iv:[0,4,7,10]},
+  {id:'min7', cn:'小七和弦', ab:'m7',     iv:[0,3,7,10]},
+  {id:'hdim7',cn:'半减七和弦',ab:'m7♭5',  iv:[0,3,6,10]},
+  {id:'dim7', cn:'减七和弦', ab:'dim7',   iv:[0,3,6,9]},
+  {id:'maj6', cn:'大六和弦', ab:'6',      iv:[0,4,7,9]},
+  {id:'min6', cn:'小六和弦', ab:'m6',     iv:[0,3,7,9]}
+];
+const CHORD_BY_ID = {};
+CHORDS.forEach(c => CHORD_BY_ID[c.id] = c);
+
+const DEFAULT_SETTINGS = {
+  refMidi:60, lowMidi:48, highMidi:72,
+  mode:'single',
+  singleAnswer:'key',      // key | degree
+  singlePool:'natural',    // natural | all
+  intervalDir:'up',        // up | down | both
+  intervalSet:[1,2,3,4,5,6,7,8,9,10,11,12],
+  chordSet:['maj','min','aug','dim','sus2','sus4','maj7','dom7','min7'],
+  arpDir:'up',             // up | updown
+  readType:'note',         // note | interval
+  readAnswer:'name',       // name | key
+  clef:'treble',           // treble | bass
+  accid:'natural',         // natural | all  (识谱是否含升降号)
+  timbre:'piano',
+  refMode:'once',          // once | each
+  autoNext:true,
+  showKeyNames:true,
+  perRound:15,
+  volume:0.85,
+  groupLast:{ear:'single', read:'readnote'},
+  toolLow:48, toolHigh:72, toolLabel:'name',
+  themeColor:'#5b53e8', themePreset:'indigo'
+};
+
+/* ------------------------------------------------------------ 2. 工具函数 */
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd   = n => Math.floor(Math.random()*n);
+const pick  = a => a[rnd(a.length)];
+const mtof  = m => 440 * Math.pow(2, (m-69)/12);
+const isBlackPc = pc => BLACK_PC.indexOf(pc) >= 0;
+const pname = m => PC_NAMES[((m % 12) + 12) % 12];
+const octOf = m => Math.floor(m/12) - 1;
+const fullName = m => pname(m) + octOf(m);
+const solfege = m => SOLFEGE[((m % 12) + 12) % 12];
+/* 全音阶级数（用于五线谱定位）：C=0 D=1 E=2 F=3 G=4 A=5 B=6 */
+const DIATONIC_OF_PC = [0,0,1,1,2,3,3,4,4,5,5,6];
+const diatonic = m => octOf(m)*7 + DIATONIC_OF_PC[((m%12)+12)%12];
+function rangeArr(a,b){ const r=[]; for(let i=a;i<=b;i++) r.push(i); return r; }
+function nearestWhiteDown(m){ while(isBlackPc(((m%12)+12)%12)) m--; return m; }
+function nearestWhiteUp(m){ while(isBlackPc(((m%12)+12)%12)) m++; return m; }
+function fmtTime(ms){ const s=Math.round(ms/100)/10; return s+'s'; }
+function fmtDate(t){
+  const d=new Date(t), p=n=>String(n).padStart(2,'0');
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let toastTimer = null;
+function toast(msg){
+  const el = $('#toast'); el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('on'), 1900);
+}
+
+/* ------------------------------------------------------------ 3. 存储层 */
+const LS_S = 'earlab.settings.v1', LS_R = 'earlab.sessions.v1';
+const Store = {
+  settings: Object.assign({}, DEFAULT_SETTINGS),
+  sessions: [],
+  load(){
+    try{
+      const s = JSON.parse(localStorage.getItem(LS_S) || 'null');
+      if (s && typeof s === 'object') this.settings = Object.assign({}, DEFAULT_SETTINGS, s);
+    }catch(e){ /* 忽略损坏数据 */ }
+    /* 旧版本单模块「识谱练习」迁移到细分的三个识谱模块 */
+    if (this.settings.mode === 'read'){
+      this.settings.mode = this.settings.readType === 'interval' ? 'readiv' : 'readnote';
+    }
+    try{
+      const r = JSON.parse(localStorage.getItem(LS_R) || '[]');
+      if (Array.isArray(r)) this.sessions = r;
+    }catch(e){ this.sessions = []; }
+  },
+  saveSettings(){
+    try{ localStorage.setItem(LS_S, JSON.stringify(this.settings)); }catch(e){}
+  },
+  save(){
+    try{ localStorage.setItem(LS_R, JSON.stringify(this.sessions)); }catch(e){}
+  },
+  addSession(s){
+    this.sessions.unshift(s);
+    if (this.sessions.length > 400) this.sessions.length = 400;
+    this.save();
+  },
+  removeSession(id){ this.sessions = this.sessions.filter(s => s.id !== id); this.save(); },
+  clearAll(){ this.sessions = []; this.save(); },
+  allItems(){
+    const out = [];
+    this.sessions.forEach(s => (s.items||[]).forEach(it => out.push(Object.assign({mode:s.mode, sid:s.id}, it))));
+    return out;
+  }
+};
+
+/* ------------------------------------------------------ 3b. 主题配色 */
+const THEMES = [
+  {id:'indigo', name:'靛紫', c:'#5b53e8'},
+  {id:'teal',   name:'青碧', c:'#0d9488'},
+  {id:'rose',   name:'蔷薇', c:'#e11d6b'},
+  {id:'amber',  name:'琥珀', c:'#d97706'},
+  {id:'blue',   name:'湖蓝', c:'#2563eb'},
+  {id:'violet', name:'魅紫', c:'#7c3aed'}
+];
+function hexToRgb(hex){
+  hex = String(hex).replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  const n = parseInt(hex, 16);
+  return {r:(n>>16)&255, g:(n>>8)&255, b:n&255};
+}
+function rgbToHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+  let h=0, s=0, l=(mx+mn)/2;
+  const d = mx-mn;
+  if (d !== 0){
+    s = l > 0.5 ? d/(2-mx-mn) : d/(mx+mn);
+    switch(mx){
+      case r: h = (g-b)/d + (g < b ? 6 : 0); break;
+      case g: h = (b-r)/d + 2; break;
+      default: h = (r-g)/d + 4;
+    }
+    h *= 60;
+  }
+  return {h:Math.round(h), s:Math.round(s*100), l:Math.round(l*100)};
+}
+function hslToRgb(h,s,l){
+  h/=360; s/=100; l/=100;
+  let r,g,b;
+  if (s === 0){ r=g=b=l; }
+  else {
+    const hue2 = (p,q,t) => {
+      if (t < 0) t += 1; if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q-p)*6*t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q-p)*(2/3-t)*6;
+      return p;
+    };
+    const q = l < 0.5 ? l*(1+s) : l+s-l*s;
+    const p = 2*l-q;
+    r = hue2(p,q,h+1/3); g = hue2(p,q,h); b = hue2(p,q,h-1/3);
+  }
+  return {r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255)};
+}
+function rgbToHex(r,g,b){
+  const h = n => {
+    const v = Math.max(0, Math.min(255, n|0)).toString(16);
+    return v.length === 1 ? '0' + v : v;
+  };
+  return '#' + h(r) + h(g) + h(b);
+}
+function hslHex(h,s,l){ const c = hslToRgb(h, s, l); return rgbToHex(c.r, c.g, c.b); }
+/* 由主色推导整套品牌色：brand-2 略亮、soft/line 为同色相浅色调 */
+function applyTheme(color){
+  try{
+    const root = document.documentElement;
+    const {r,g,b} = hexToRgb(color);
+    const {h,s,l} = rgbToHsl(r,g,b);
+    root.style.setProperty('--brand', rgbToHex(r,g,b));
+    root.style.setProperty('--brand-2', hslHex(h, s, Math.min(96, l + 9)));
+    root.style.setProperty('--brand-soft', hslHex(h, Math.min(72, Math.round(s*0.55) + 12), 93));
+    root.style.setProperty('--brand-line', hslHex(h, Math.min(82, Math.round(s*0.65) + 8), 84));
+    const mc = document.querySelector('meta[name="theme-color"]');
+    if (mc) mc.setAttribute('content', rgbToHex(r,g,b));
+  }catch(e){ /* 颜色非法时静默忽略 */ }
+}
+
+/* ------------------------------------------------------------ 4. 音频引擎 */
+const Audio2 = {
+  ctx:null, master:null, active:[], muted:false,
+  init(){
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = Store.settings.volume;
+    this.master.connect(this.ctx.destination);
+  },
+  resume(){
+    this.init();
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  stopAll(){
+    const now = this.ctx ? this.ctx.currentTime : 0;
+    this.active.forEach(v => {
+      try{ v.g.gain.cancelScheduledValues(now); v.g.gain.setTargetAtTime(0.0001, now, 0.02); }catch(e){}
+      try{ v.o.forEach(o => o.stop(now + 0.09)); }catch(e){}
+    });
+    this.active = [];
+  },
+  /* 发声：返回该音持续毫秒数 */
+  voice(midi, t0, dur, vel, timbre){
+    const ctx = this.ctx, f = mtof(midi), g = ctx.createGain();
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 4200; lp.Q.value = 0.6;
+    const oscs = [];
+    const mk = (type, mult, gain, detune) => {
+      const o = ctx.createOscillator();
+      o.type = type; o.frequency.value = f*mult;
+      if (detune) o.detune.value = detune;
+      const og = ctx.createGain(); og.gain.value = gain;
+      o.connect(og); og.connect(lp); oscs.push(o); return o;
+    };
+    if (timbre === 'sine'){ mk('sine',1,1,0); }
+    else if (timbre === 'organ'){ mk('sine',1,.7,0); mk('sine',2,.3,4); mk('sine',3,.12,0); }
+    else { mk('triangle',1,1,0); mk('sine',2,.32,rnd(9)-4); mk('sine',3,.13,0); mk('sine',4.01,.05,0); }
+    lp.connect(g); g.connect(this.master);
+
+    const peak = clamp(vel, .05, 1) * (timbre==='sine'?.85:.55);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + (timbre==='organ'?.05:.012));
+    if (timbre === 'organ'){
+      g.gain.setValueAtTime(peak, t0 + dur*0.8);
+    } else {
+      g.gain.exponentialRampToValueAtTime(peak*0.34, t0 + Math.min(.55, dur*0.7));
+      g.gain.setValueAtTime(peak*0.3, t0 + Math.max(.06, dur-0.14));
+    }
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + .32);
+    oscs.forEach(o => { try{ o.start(t0); o.stop(t0 + dur + .4); }catch(e){} });
+    const rec = {o:oscs, g:g};
+    this.active.push(rec);
+    setTimeout(()=>{ this.active = this.active.filter(v => v !== rec); }, (dur+.6)*1000);
+  },
+  /* 播放一组音：mode 为 chord 同时 / seq 依次；返回总毫秒数 */
+  play(notes, opt){
+    if (!this.ctx || this.muted || !notes.length) return 0;
+    opt = opt || {};
+    const dur = opt.dur || 1.1, gap = opt.gap || .42, vel = opt.vel || .8;
+    const timbre = Store.settings.timbre;
+    const t0 = this.ctx.currentTime + .06;
+    if (opt.type === 'chord'){
+      const v = vel * clamp(1.25/Math.sqrt(notes.length), .35, 1);
+      notes.forEach(n => this.voice(n, t0, dur, v, timbre));
+      return (dur + .45) * 1000;
+    }
+    notes.forEach((n, i) => this.voice(n, t0 + i*gap, dur, vel, timbre));
+    return (dur + (notes.length-1)*gap + .45) * 1000;
+  }
+};
+
+/* ------------------------------------------------------- 5. 五线谱渲染 */
+const CLEF_CH = { treble:'\u{1D11E}', bass:'\u{1D122}' };
+/* 谱号字形可用性检测（缺失时降级为字母标记） */
+const clefOK = (function(){
+  try{
+    const c = document.createElement('canvas').getContext('2d');
+    c.font = '40px sans-serif';
+    const tofu = c.measureText('\uE0FF').width;      // 私用区，必然缺字
+    const g = c.measureText(CLEF_CH.treble).width;
+    const b = c.measureText(CLEF_CH.bass).width;
+    return !!g && Math.abs(g-tofu) > 0.5 && !!b && Math.abs(b-tofu) > 0.5;
+  }catch(e){ return false; }
+})();
+
+function staffY(midi, clef){
+  const base = clef === 'treble' ? (4*7+2) : (2*7+4);   // 高音谱下加一线 E4 / 低音谱下加一线 G2
+  return 40 - 5*(diatonic(midi) - base);
+}
+function clefMarkup(clef, x, midY){
+  if (clefOK){
+    const size = clef === 'treble' ? 62 : 44;
+    const y    = clef === 'treble' ? 54 : 34;
+    return '<text x="'+x+'" y="'+y+'" font-size="'+size+'" text-anchor="middle" '+
+      'font-family="Bravura,\'Noto Music\',\'Segoe UI Symbol\',\'Apple Symbols\',Symbola,serif" '+
+      'fill="#2a2c45">'+CLEF_CH[clef]+'</text>';
+  }
+  const label = clef === 'treble' ? 'G' : 'F';
+  return '<g><text x="'+x+'" y="'+(midY+13)+'" font-size="34" text-anchor="middle" font-weight="700" '+
+    'font-family="Georgia,serif" fill="#2a2c45">'+label+'</text></g>';
+}
+/* 生成五线谱 SVG 字符串。notes: [midi,...] */
+function renderStaff(notes, clef, opts){
+  opts = opts || {};
+  const ys = notes.map(m => staffY(m, clef));
+  const top = Math.min(0, Math.min.apply(null, ys)) - 34;
+  const bot = Math.max(40, Math.max.apply(null, ys)) + 34;
+  const H = bot - top, W = 320, off = -top;
+  const p = [];
+  p.push('<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="五线谱">');
+  p.push('<g transform="translate(0,'+off+')">');
+  for (let i = 0; i < 5; i++){
+    p.push('<line x1="6" y1="'+(i*10)+'" x2="'+(W-6)+'" y2="'+(i*10)+'" stroke="#c7cade" stroke-width="1.25"/>');
+  }
+  p.push(clefMarkup(clef, 36, 20));
+  const stacked = !!opts.stacked && notes.length > 1;
+  const xs = stacked ? notes.map(() => 190)
+                     : (notes.length === 1 ? [190] : notes.map((n,i) => 150 + i*72));
+  /* 柱式和弦：同位置叠放，遇到相邻二度自动右移，避免符头重叠 */
+  const drawn = [];
+  let minX = 1e9, maxX = -1e9;
+  notes.forEach((m, i) => {
+    let x = xs[i];
+    if (stacked && drawn.some(d => Math.abs(staffY(d, clef) - ys[i]) < 7)) x += 11;
+    if (stacked) drawn.push(m);
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    p.push(noteMarkup(m, x, clef, stacked));
+  });
+  if (stacked){
+    const sorted = ys.slice().sort((a,b) => a-b);
+    const yTop = sorted[0], yBot = sorted[sorted.length-1];
+    const avg = sorted.reduce((a,b) => a+b, 0) / sorted.length;
+    if (avg > 18){
+      p.push('<line x1="'+(maxX+6.3)+'" y1="'+(yBot-1)+'" x2="'+(maxX+6.3)+'" y2="'+(yTop-33)+'" stroke="#23253d" stroke-width="1.7" stroke-linecap="round"/>');
+    } else {
+      p.push('<line x1="'+(minX-6.3)+'" y1="'+(yTop+1)+'" x2="'+(minX-6.3)+'" y2="'+(yBot+33)+'" stroke="#23253d" stroke-width="1.7" stroke-linecap="round"/>');
+    }
+  }
+  p.push('</g></svg>');
+  return p.join('');
+}
+function noteMarkup(midi, x, clef, noStem){
+  const y = staffY(midi, clef), pc = ((midi%12)+12)%12;
+  const idx = diatonic(midi) - (clef === 'treble' ? 30 : 18);
+  const s = [];
+  /* 加线 */
+  if (idx <= -2){ for (let i = -2; i >= idx; i -= 2) s.push('<line x1="'+(x-15)+'" y1="'+(40-5*i)+'" x2="'+(x+15)+'" y2="'+(40-5*i)+'" stroke="#c7cade" stroke-width="1.25"/>'); }
+  if (idx >= 10){ for (let i = 10; i <= idx; i += 2) s.push('<line x1="'+(x-15)+'" y1="'+(40-5*i)+'" x2="'+(x+15)+'" y2="'+(40-5*i)+'" stroke="#c7cade" stroke-width="1.25"/>'); }
+  /* 升降号 */
+  if (isBlackPc(pc)) s.push('<text x="'+(x-19)+'" y="'+(y+7.5)+'" font-size="21" text-anchor="middle" fill="#3a3c58">♯</text>');
+  /* 符头 */
+  s.push('<ellipse cx="'+x+'" cy="'+y+'" rx="6.6" ry="4.9" transform="rotate(-21 '+x+' '+y+')" fill="#23253d"/>');
+  /* 符干 */
+  if (noStem) return '<g>' + s.join('') + '</g>';
+  if (y > 18) s.push('<line x1="'+(x+6.3)+'" y1="'+(y-1)+'" x2="'+(x+6.3)+'" y2="'+(y-33)+'" stroke="#23253d" stroke-width="1.7" stroke-linecap="round"/>');
+  else        s.push('<line x1="'+(x-6.3)+'" y1="'+(y+1)+'" x2="'+(x-6.3)+'" y2="'+(y+33)+'" stroke="#23253d" stroke-width="1.7" stroke-linecap="round"/>');
+  return '<g>' + s.join('') + '</g>';
+}
+
+/* ------------------------------------------------------- 6. 出题生成器 */
+function chordNotes(root, iv){ return iv.map(v => root + v); }
+function chordLabel(root, chord){
+  return fullName(root) + ' ' + chord.cn + '（' + chordNotes(root, chord.iv).map(fullName).join(' ') + '）';
+}
+function intervalLabel(a, b, iv){
+  return fullName(a) + (b >= a ? ' ↗ ' : ' ↘ ') + fullName(b) + '（' + iv.cn + '）';
+}
+function availChords(){
+  const set = Store.settings.chordSet.filter(id => CHORD_BY_ID[id]);
+  return set.length ? set.map(id => CHORD_BY_ID[id]) : [CHORD_BY_ID.maj];
+}
+function availIntervals(){
+  const set = Store.settings.intervalSet;
+  const list = INTERVALS.filter(i => set.indexOf(i.s) >= 0);
+  return list.length ? list : INTERVALS.slice(0,7);
+}
+function notePool(opts){
+  const st = Store.settings;
+  let lo = st.lowMidi, hi = st.highMidi;
+  if (lo > hi){ const t = lo; lo = hi; hi = t; }
+  let arr = rangeArr(lo, hi);
+  if (opts && opts.natural){ arr = arr.filter(m => !isBlackPc(((m%12)+12)%12)); }
+  if (opts && opts.majorOf != null){
+    const r = ((opts.majorOf % 12)+12)%12;
+    arr = arr.filter(m => MAJOR_IV.indexOf((((m%12)+12)%12 - r + 12) % 12) >= 0);
+  }
+  return arr.length ? arr : rangeArr(lo, hi);
+}
+function degreeOf(midi){ return MAJOR_IV.indexOf(((((midi%12)+12)%12) - (((Store.settings.refMidi%12)+12)%12) + 12) % 12) + 1; }
+
+/* 单音听辨 */
+function pickAvoiding(pool, ex){
+  if (!ex || !pool.length) return pick(pool);
+  let p = pool.filter(m => ex.midis.indexOf(m) < 0 && ex.pcs.indexOf(((m%12)+12)%12) < 0);
+  if (!p.length) p = pool.filter(m => ex.midis.indexOf(m) < 0);
+  if (!p.length) p = pool;
+  return pick(p);
+}
+function genSingle(ex){
+  const st = Store.settings;
+  if (st.singleAnswer === 'degree'){
+    const pool = notePool({majorOf: st.refMidi});
+    const midi = pickAvoiding(pool, ex);
+    return {
+      mode:'single', sub:'degree',
+      audio:{type:'single', notes:[midi], dur:1.1},
+      answer:{type:'degree', value:degreeOf(midi), options:rangeArr(1,7), label:'第 '+degreeOf(midi)+' 级（'+solfege(midi)+'）'},
+      prompt:'听音级：以基准音为主音，判断这是第几级音',
+      reveal:{notes:[midi]}
+    };
+  }
+  const pool = notePool({natural: st.singlePool === 'natural'});
+  const midi = pickAvoiding(pool, ex);
+  return {
+    mode:'single', sub:'key',
+    audio:{type:'single', notes:[midi], dur:1.1},
+    answer:{type:'key', value:midi, label:fullName(midi)},
+    prompt:'听音高：在键盘上点出听到的音',
+    reveal:{notes:[midi]}
+  };
+}
+
+/* 音程听辨 */
+function genInterval(){
+  const st = Store.settings;
+  let lo = Math.min(st.lowMidi, st.highMidi), hi = Math.max(st.lowMidi, st.highMidi);
+  const span = hi - lo;
+  const dirs = st.intervalDir === 'both' ? ['up','down'] : [st.intervalDir];
+  /* 先枚举所有合法组合，避免范围过窄时反复重试 */
+  let use = availIntervals().filter(iv => iv.s <= span);
+  if (!use.length){ use = [INTERVALS[0]]; }
+  const combos = [];
+  use.forEach(iv => {
+    const maxRoot = span - iv.s;
+    if (maxRoot < 0) return;
+    for (let r = lo; r <= lo + maxRoot; r++) dirs.forEach(d => combos.push({iv:iv, root:r, dir:d}));
+  });
+  if (!combos.length){ /* 兜底：把音域临时放宽到至少一个八度 */
+    const low = Math.max(21, lo), high = Math.max(low + 12, hi);
+    return { mode:'interval', sub:'up',
+      audio:{type:'seq', notes:[low, low+7], dur:.95, gap:.72},
+      answer:{type:'interval', value:7, label:'纯五度', dir:'up'},
+      prompt:'听音程：这两个音相距多少',
+      reveal:{notes:[low, low+7]} };
+  }
+  const c = pick(combos);
+  const lowN = c.root, highN = c.root + c.iv.s;
+  const seq = c.dir === 'up' ? [lowN, highN] : [highN, lowN];
+  return {
+    mode:'interval', sub:c.dir,
+    audio:{type:'seq', notes:seq, dur:.95, gap:.72},
+    answer:{type:'interval', value:c.iv.s, label:c.iv.cn, dir:c.dir},
+    prompt:'听音程：这两个音相距多少' + (st.intervalDir === 'both' ? '（注意先后方向）' : ''),
+    reveal:{notes:[lowN, highN]}
+  };
+}
+
+/* 和弦（柱式 / 分解） */
+function genChord(kind){
+  const st = Store.settings;
+  const lo = Math.min(st.lowMidi, st.highMidi), hi = Math.max(st.lowMidi, st.highMidi);
+  const span = hi - lo;
+  let chords = availChords().filter(c => c.iv[c.iv.length-1] <= span);
+  if (!chords.length) chords = [CHORD_BY_ID.maj];
+  const ch = pick(chords);
+  const maxIv = ch.iv[ch.iv.length-1];
+  const root = lo + (span > maxIv ? rnd(span - maxIv + 1) : 0);
+  const notes = chordNotes(root, ch.iv);
+  const isArp = kind === 'arp';
+  const seq = isArp && st.arpDir === 'updown'
+    ? notes.concat(notes.slice(1, -1).reverse())
+    : notes;
+  return {
+    mode:kind, sub:ch.id,
+    audio:{type: isArp ? 'seq' : 'chord', notes:seq, dur:isArp?.88:1.7, gap:.42},
+    answer:{type:'chord', value:ch.id, label:ch.cn, options:chords.map(c => c.id), formula:ch.ab},
+    prompt: isArp ? '听分解和弦：判断和弦性质' : '听柱式和弦：判断和弦性质',
+    reveal:{notes:notes}
+  };
+}
+
+/* 识谱 */
+function genRead(ex, type){
+  const st = Store.settings;
+  const lo = Math.min(st.lowMidi, st.highMidi), hi = Math.max(st.lowMidi, st.highMidi);
+  const span = hi - lo;
+
+  if (type === 'interval'){
+    let use = availIntervals().filter(iv => iv.s <= span);
+    if (!use.length) use = [INTERVALS[0]];
+    const iv = pick(use);
+    const root = lo + (span > iv.s ? rnd(span - iv.s + 1) : 0);
+    const a = root, b = root + iv.s;
+    return {
+      mode: st.mode, sub:'interval',
+      audio:null,
+      answer:{type:'interval', value:iv.s, label:iv.cn},
+      prompt:'看谱面：这两个音构成什么音程？（点「试听」可听）',
+      reveal:{notes:[a,b]},
+      staff:{notes:[a,b], clef:st.clef}
+    };
+  }
+
+  if (type === 'chord'){
+    let chords = availChords().filter(c => c.iv[c.iv.length-1] <= span);
+    if (!chords.length) chords = [CHORD_BY_ID.maj];
+    let cands = [];
+    chords.forEach(c => {
+      const maxIv = c.iv[c.iv.length-1];
+      for (let r = lo; r + maxIv <= hi; r++) cands.push({c:c, root:r});
+    });
+    if (st.accid === 'natural'){
+      const nat = cands.filter(x => chordNotes(x.root, x.c.iv).every(m => !isBlackPc(((m%12)+12)%12)));
+      if (nat.length) cands = nat;
+    }
+    if (!cands.length) cands = [{c:CHORD_BY_ID.maj, root:lo}];
+    const c1 = pick(cands);
+    const notes = chordNotes(c1.root, c1.c.iv);
+    return {
+      mode: st.mode, sub:'chord',
+      audio:null,
+      answer:{type:'chord', value:c1.c.id, label:c1.c.cn},
+      prompt:'看谱面：这个和弦是什么性质？（点「试听」可听）',
+      reveal:{notes:notes},
+      staff:{notes:notes, clef:st.clef, stacked:true}
+    };
+  }
+
+  const pool = notePool({natural: st.accid === 'natural'});
+  const midi = pickAvoiding(pool, ex);
+  const isKey = st.readAnswer === 'key';
+  return {
+    mode: st.mode, sub:'note',
+    audio:null,
+    answer: isKey
+      ? {type:'key', value:midi, label:fullName(midi)}
+      : {type:'name', value:((midi%12)+12)%12, label:pname(midi) + '（' + fullName(midi) + '）'},
+    prompt: isKey ? '看谱面：在键盘上点出这个音' : '看谱面：这个音的音名是什么？',
+    reveal:{notes:[midi]},
+    staff:{notes:[midi], clef:st.clef}
+  };
+}
+
+function makeQuestion(ex){
+  const m = Store.settings.mode;
+  switch (m){
+    case 'interval':  return genInterval();
+    case 'block':     return genChord('block');
+    case 'arp':       return genChord('arp');
+    case 'readnote':
+    case 'readiv':
+    case 'readchord':
+    case 'read':      return genRead(ex, readTypeOf(m));
+    default:          return genSingle(ex);
+  }
+}
+/* 避免与上一题完全重复（同一组音），单音题还会避开最近两个出现过的音 */
+function questionSig(q){
+  const notes = (q && q.reveal && q.reveal.notes) || [];
+  return notes.slice().sort((a,b) => a-b).join(',');
+}
+function makeQuestionFresh(){
+  const ex = Quiz.recent;
+  let q = makeQuestion(ex);
+  for (let t = 0; t < 14; t++){
+    const sig = questionSig(q);
+    if (!ex.sigs.length || !sig || sig !== ex.sigs[0]) break;
+    q = makeQuestion(ex);
+  }
+  return q;
+}
+
+/* ------------------------------------------------------- 7. 键盘组件 */
+/* 通用的钢琴键盘渲染：练习页与工具页共用
+   opts.labelMode: 'name' 全音名 | 'solfege' 全唱名 | 'cOnly' 仅 C 键 | 'none' */
+function pianoHTML(el, lo, hi, opts){
+  opts = opts || {};
+  let low = nearestWhiteDown(lo), high = nearestWhiteUp(hi);
+  if (high - low > 48) high = low + 48;
+  const notes = rangeArr(low, high);
+  const wcount = notes.filter(m => !isBlackPc(((m%12)+12)%12)).length;
+  const wrap = el.parentElement;
+  const cw = wrap ? wrap.clientWidth : 0;
+  /* 容器不可测量（隐藏中或尚未完成布局）时退回视口宽度，避免把键盘画得过窄 */
+  const base = cw > 60 ? cw : Math.max(300, (window.innerWidth || 1024) - 80);
+  const avail = base - 2;
+  /* 用小数宽 + 逐键取整定位，保证键盘总宽与容器完全一致（不留右侧空隙） */
+  const w = clamp(avail / wcount, 22, 96);
+  const bw = w * .62;
+  const W = Math.round(w * wcount);
+  el.style.width = W + 'px';
+  el.style.margin = (W < avail - 6) ? '0 auto' : '0';
+  const lm = opts.labelMode || 'name';
+  const clickable = opts.clickable ? ' clickable' : '';
+  const labelOf = m => {
+    if (lm === 'none') return '';
+    const pc = ((m%12)+12)%12;
+    if (pc === 0) return lm === 'solfege' ? 'do' : fullName(m);
+    if (lm === 'cOnly') return '';
+    return lm === 'solfege' ? SOLFEGE[pc] : pname(m);
+  };
+  const html = [];
+  let wi = 0;
+  notes.forEach(m => {
+    const pc = ((m%12)+12)%12, black = isBlackPc(pc);
+    const lbl = labelOf(m);
+    const mid = ' data-midi="'+m+'"';
+    if (black){
+      html.push('<div class="key black'+clickable+'"'+mid+' style="left:'+Math.round(wi*w - bw/2)+'px;width:'+Math.round(bw)+'px">'+
+        (lbl ? '<span>'+lbl+'</span>' : '') + '</div>');
+    } else {
+      const left = Math.round(wi*w);
+      html.push('<div class="key white'+clickable+'"'+mid+' style="left:'+left+'px;width:'+(Math.round((wi+1)*w)-left)+'px">'+
+        (lbl ? '<span>'+lbl+'</span>' : '') + '</div>');
+      wi++;
+    }
+  });
+  el.innerHTML = html.join('');
+  return {low:low, high:high, width:W, avail:avail, whiteW:w};
+}
+const Keyboard = {
+  el:null, low:0, high:0, keys:[], mode:'view',   // view | answer | listen
+  build(){
+    const el = $('#keyboard'); if (!el) return;
+    this.el = el;
+    const st = Store.settings;
+    const lo = Math.min(st.lowMidi, st.highMidi), hi = Math.max(st.lowMidi, st.highMidi);
+    const info = pianoHTML(el, lo, hi, {
+      labelMode: st.showKeyNames ? 'name' : 'cOnly',
+      clickable: (this.mode === 'answer' || this.mode === 'listen')
+    });
+    this.low = info.low; this.high = info.high;
+    this.keys = $$('.key', el);
+    /* 窄屏溢出时给出滑动提示 */
+    const hint = $('#kbHint');
+    if (hint){
+      const base = hint.dataset.base || (hint.dataset.base = hint.textContent);
+      hint.textContent = info.width > info.avail ? base + ' · 可左右滑动' : base;
+    }
+  },
+  setMode(m){ this.mode = m; this.build(); },
+  clearMarks(){ this.keys.forEach(k => k.classList.remove('lit','correct','wrong','dim')); },
+  mark(midis, cls, dimOthers){
+    if (dimOthers) this.keys.forEach(k => k.classList.add('dim'));
+    const set = midis.map(Number);
+    this.keys.forEach(k => {
+      if (set.indexOf(Number(k.dataset.midi)) >= 0){
+        k.classList.remove('dim'); k.classList.add(cls);
+      }
+    });
+  },
+  flash(midis, cls, ms){
+    this.mark(midis, cls, false);
+    setTimeout(()=>{ this.keys.forEach(k => k.classList.remove(cls)); }, ms || 900);
+  }
+};
+function staffFor(midis, clef, opts){
+  return renderStaff(midis.slice().sort((a,b)=>a-b), clef || Store.settings.clef, opts);
+}
+
+/* ------------------------------------------------------- 8. 视图：设置面板 */
+function noteOptions(lo, hi, sel){
+  const out = [];
+  for (let m = lo; m <= hi; m++){
+    out.push('<option value="'+m+'"'+(m===sel?' selected':'')+'>'+fullName(m)+'  ·  '+Math.round(mtof(m))+'Hz</option>');
+  }
+  return out.join('');
+}
+function renderSettingsStatic(){
+  const st = Store.settings;
+  $('#selRef').innerHTML  = noteOptions(45, 81, st.refMidi);
+  $('#selLow').innerHTML  = noteOptions(33, 84, st.lowMidi);
+  $('#selHigh').innerHTML = noteOptions(40, 96, st.highMidi);
+  $('#selTimbre').value   = st.timbre;
+  $('#selRound').value    = String(st.perRound);
+  syncChips();
+  renderRangeHint();
+  renderTheme();
+}
+function renderTheme(){
+  const st = Store.settings;
+  const box = $('#themeSwatches'); if (!box) return;
+  box.innerHTML = THEMES.map(t =>
+      '<button class="swatch'+(st.themePreset===t.id?' on':'')+'" data-theme="'+t.id+'" title="'+t.name+'" style="background:'+t.c+'"></button>'
+    ).join('') +
+    '<button class="swatch custom'+(st.themePreset==='custom'?' on':'')+'" data-theme="custom" title="自定义取色">＋</button>';
+  $$('#themeSwatches .swatch').forEach(b => {
+    b.onclick = () => {
+      const id = b.dataset.theme;
+      if (id === 'custom'){ const c = $('#selTheme'); if (c) c.click(); return; }
+      const t = THEMES.filter(x => x.id === id)[0]; if (!t) return;
+      Store.settings.themePreset = id;
+      Store.settings.themeColor = t.c;
+      Store.saveSettings(); applyTheme(t.c); renderTheme();
+    };
+  });
+  const ci = $('#selTheme');
+  if (ci) ci.oninput = e => {
+    const c = e.target.value;
+    Store.settings.themeColor = c;
+    Store.settings.themePreset = 'custom';
+    Store.saveSettings(); applyTheme(c); renderTheme();
+  };
+}
+function syncChips(){
+  const st = Store.settings;
+  $$('#chipsRefMode .chip').forEach(b => b.classList.toggle('on', b.dataset.refmode === st.refMode));
+  $$('#chipsExtra .chip').forEach(b => b.classList.toggle('on', !!st[b.dataset.flag]));
+  $$('.chip[data-range]').forEach(b => {
+    const span = Math.abs(st.highMidi - st.lowMidi) + 1;
+    b.classList.toggle('on', Number(b.dataset.range) === span && st.lowMidi <= st.highMidi);
+  });
+}
+function renderRangeHint(){
+  const st = Store.settings;
+  const lo = Math.min(st.lowMidi, st.highMidi), hi = Math.max(st.lowMidi, st.highMidi);
+  const n = hi - lo + 1;
+  const white = rangeArr(lo, hi).filter(m => !isBlackPc(m%12)).length;
+  const refIn = st.refMidi >= lo && st.refMidi <= hi;
+  $('#rangeHint').innerHTML = '共 ' + n + ' 个半音 / ' + white + ' 个白键 · ' +
+    fullName(lo) + ' → ' + fullName(hi) +
+    (refIn ? ' · 基准音在范围内' : ' · <span style="color:var(--warn)">基准音不在范围内</span>');
+}
+function chipHTML(list, sel, attr){
+  return list.map(function(x){
+    const on = sel.indexOf(x.v) >= 0;
+    return '<button class="chip'+(on?' on':'')+'" data-'+attr+'="'+x.v+'">'+x.label+'</button>';
+  }).join('');
+}
+function renderModeOpts(){
+  const st = Store.settings, m = st.mode, box = $('#modeOpts');
+  let h = '';
+  if (m === 'single'){
+    h += '<label>单音选项</label>';
+    h += '<div class="chips">'+
+      '<button class="chip'+(st.singleAnswer==='key'?' on':'')+'" data-opt="singleAnswer" data-val="key">在键盘上作答</button>'+
+      '<button class="chip'+(st.singleAnswer==='degree'?' on':'')+'" data-opt="singleAnswer" data-val="degree">答音级（相对基准音）</button>'+
+      '</div>';
+    if (st.singleAnswer === 'key'){
+      h += '<div class="chips">'+
+        '<button class="chip'+(st.singlePool==='natural'?' on':'')+'" data-opt="singlePool" data-val="natural">只考自然音</button>'+
+        '<button class="chip'+(st.singlePool==='all'?' on':'')+'" data-opt="singlePool" data-val="all">含变化音</button>'+
+        '</div>';
+    }
+    h += '<p class="hint">'+(st.singleAnswer==='degree'
+      ? '以基准音为主音，判断听到的是大调音阶的第几级（do re mi…）。'
+      : '在下方键盘点出你听到的音，点键即作答。')+'</p>';
+  } else if (m === 'interval'){
+    h += '<label>音程选项</label>';
+    h += '<div class="chips">'+
+      '<button class="chip'+(st.intervalDir==='up'?' on':'')+'" data-opt="intervalDir" data-val="up">上行</button>'+
+      '<button class="chip'+(st.intervalDir==='down'?' on':'')+'" data-opt="intervalDir" data-val="down">下行</button>'+
+      '<button class="chip'+(st.intervalDir==='both'?' on':'')+'" data-opt="intervalDir" data-val="both">上下行随机</button>'+
+      '</div>';
+    h += '<label>参与的音程</label>';
+    h += '<div class="chips">'+ chipHTML(INTERVALS.map(i => ({v:i.s, label:i.cn+'<span class="sub">'+i.ab+'</span>'})), st.intervalSet, 'iv') +'</div>';
+  } else if (m === 'block' || m === 'arp'){
+    h += '<label>参与的和弦</label>';
+    h += '<div class="chips">'+ chipHTML(CHORDS.map(c => ({v:c.id, label:c.cn+'<span class="sub">'+c.ab+'</span>'})), st.chordSet, 'ch') +'</div>';
+    if (m === 'arp'){
+      h += '<label>分解方向</label><div class="chips">'+
+        '<button class="chip'+(st.arpDir==='up'?' on':'')+'" data-opt="arpDir" data-val="up">上行</button>'+
+        '<button class="chip'+(st.arpDir==='updown'?' on':'')+'" data-opt="arpDir" data-val="updown">上下行</button>'+
+        '</div>';
+    }
+    h += '<p class="hint">柱式 = 同时发声；分解 = 依次发声。建议初次练习只勾选三和弦与属七。</p>';
+  } else if (m === 'readnote' || m === 'readiv' || m === 'readchord' || m === 'read'){
+    h += '<label>识谱选项</label>';
+    if (m === 'readnote' || m === 'read'){
+      h += '<div class="chips">'+
+        '<button class="chip'+(st.readAnswer==='name'?' on':'')+'" data-opt="readAnswer" data-val="name">答音名</button>'+
+        '<button class="chip'+(st.readAnswer==='key'?' on':'')+'" data-opt="readAnswer" data-val="key">在键盘作答</button>'+
+        '</div>';
+    }
+    h += '<label>谱号</label><div class="chips">'+
+      '<button class="chip'+(st.clef==='treble'?' on':'')+'" data-opt="clef" data-val="treble">高音谱号</button>'+
+      '<button class="chip'+(st.clef==='bass'?' on':'')+'" data-opt="clef" data-val="bass">低音谱号</button>'+
+      '</div>';
+    h += '<label>变化音</label><div class="chips">'+
+      '<button class="chip'+(st.accid==='natural'?' on':'')+'" data-opt="accid" data-val="natural">只做自然音</button>'+
+      '<button class="chip'+(st.accid==='all'?' on':'')+'" data-opt="accid" data-val="all">含升降号</button>'+
+      '</div>';
+    if (m === 'readchord'){
+      h += '<label>参与的和弦</label>';
+      h += '<div class="chips">'+ chipHTML(CHORDS.map(c => ({v:c.id, label:c.cn+'<span class="sub">'+c.ab+'</span>'})), st.chordSet, 'ch') +'</div>';
+    }
+    h += '<p class="hint">识别谱面上的音高/音程/和弦，答完会自动播放一次以加深印象。</p>';
+  }
+  box.innerHTML = h;
+}
+
+/* 答对后自动进入下一题的等待时长（毫秒），可在反馈区看到倒计时 */
+const AUTO_NEXT_MS = 3000;
+
+/* ------------------------------------------------------- 9. 练习控制器 */
+const Quiz = {
+  live:false, items:[], qIndex:0, correct:0, streak:0, best:0,
+  cur:null, answered:false, t0:0, startedAt:0, perRound:15, mode:'single',
+  playbackMs:0, busy:false, timer:null,
+  /* 最近出现过的音，用于避免连续重复出题 */
+  recent:{sigs:[], midis:[], pcs:[]},
+
+  begin(){
+    const st = Store.settings;
+    Audio2.resume();
+    if (!Audio2.ctx){ toast('当前浏览器不支持 Web Audio，无法播放声音'); }
+    this.live = true; this.items = []; this.qIndex = 0; this.correct = 0;
+    this.streak = 0; this.best = 0; this.answered = false;
+    this.recent = {sigs:[], midis:[], pcs:[]};
+    this.mode = st.mode; this.perRound = st.perRound;
+    this.startedAt = Date.now();
+    renderStage();
+    this.spin();
+  },
+  /* 记录本题用到的音，供下一题避让 */
+  remember(q){
+    const notes = (q && q.reveal && q.reveal.notes) || [];
+    if (!notes.length) return;
+    const sig = notes.slice().sort((a,b) => a-b).join(',');
+    this.recent.sigs.unshift(sig);
+    this.recent.sigs = this.recent.sigs.slice(0, 3);
+    if (notes.length === 1){
+      this.recent.midis.unshift(notes[0]);
+      this.recent.pcs.unshift(((notes[0]%12)+12)%12);
+      this.recent.midis = this.recent.midis.slice(0, 2);
+      this.recent.pcs = this.recent.pcs.slice(0, 2);
+    } else {
+      this.recent.midis = []; this.recent.pcs = [];
+    }
+  },
+  async spin(){
+    if (!this.live) return;
+    const st = Store.settings;
+    this.answered = false; this.cur = null;
+    this.qNo = this.qIndex + 1;
+    const wantRef = this.qIndex === 0 || st.refMode === 'each';
+    this.setVisual('waiting');
+    Audio2.stopAll();
+    if (wantRef) await this.playRef(true);
+    if (!this.live) return;
+    this.cur = makeQuestionFresh();
+    this.remember(this.cur);
+    renderStage();
+    await sleep(140);
+    await this.playQuestion();
+  },
+  async playRef(loud){
+    const st = Store.settings;
+    const btn = $('#btnRef');
+    if (btn) btn.classList.add('live');
+    this.setVisual('ref');
+    const ms = Audio2.play([st.refMidi], {type:'single', dur:.95, vel:.85});
+    await sleep(Math.max(700, ms - 240));
+    if (btn) btn.classList.remove('live');
+    return ms;
+  },
+  async playQuestion(){
+    if (!this.cur || !this.live) return;
+    const a = this.cur.audio;
+    /* 无音频的题（识谱认音）直接进入作答状态 */
+    if (!a){
+      this.busy = false;
+      this.t0 = performance.now();
+      this.setVisual('ready');
+      const h0 = $('#qHint'); if (h0) h0.textContent = '请作答';
+      return;
+    }
+    const orb = $('.orb');
+    if (orb) orb.classList.add('playing');
+    const hint = $('#qHint');
+    if (hint) hint.textContent = '🎧 正在播放，请仔细听…';
+    const ms = Audio2.play(a.notes, {type:a.type, dur:a.dur, gap:a.gap, vel:.85}) || 900;
+    /* 注意：播放题目时绝不能点亮琴键——那等于直接把答案画在键盘上 */
+    this.busy = true;
+    await sleep(Math.max(120, ms - 200));
+    this.busy = false;
+    if (orb) orb.classList.remove('playing');
+    this.t0 = performance.now();
+    this.setVisual('listen');
+    if (hint) hint.textContent = '请作答';
+  },
+  /* 识谱题的试听：播放谱面音符 */
+  playStaff(){
+    if (!this.cur || !this.cur.staff) return;
+    Audio2.stopAll();
+    const s = this.cur.staff;
+    Audio2.play(s.notes, {
+      type: s.notes.length > 1 ? (s.stacked ? 'chord' : 'seq') : 'single',
+      dur: s.stacked ? 1.5 : 1, gap:.55, vel:.85
+    });
+  },
+  setVisual(kind){
+    const box = $('#qVisual'); if (!box) return;
+    const states = {
+      idle:    ['idle','点击「开始本轮」进入练习'],
+      ref:     ['playing','正在播放基准音 ' + fullName(Store.settings.refMidi)],
+      waiting: ['idle','准备题目…'],
+      listen:  ['playing','正在播放题目'],
+      ready:   ['idle','答题后再听一次']
+    };
+    const s = states[kind] || states.idle;
+    const orb = $('.orb', box);
+    if (orb){ orb.className = 'orb ' + s[0]; }
+    const p = $('.prompt', box);
+    if (p) p.textContent = s[1];
+  },
+  submit(value, textAnswer){
+    if (!this.live || !this.cur || this.answered) return;
+    const q = this.cur;
+    const ok = value === q.answer.value;
+    const ms = this.t0 ? (performance.now() - this.t0) : 0;
+    this.answered = true;
+    if (ok){ this.correct++; this.streak++; this.best = Math.max(this.best, this.streak); }
+    else this.streak = 0;
+    this.items.push({
+      mode:q.mode, sub:q.sub,
+      q: q.staff ? q.staff.notes.map(fullName).join(' ') : '音频题',
+      correctText: q.answer.label,
+      userText: textAnswer,
+      userValue: value,
+      /* 供记录页按题型分类分析 */
+      type: q.answer.type,
+      pc: (q.reveal && q.reveal.notes && q.reveal.notes.length) ? (((q.reveal.notes[0]%12)+12)%12) : null,
+      notes: (q.reveal && q.reveal.notes) ? q.reveal.notes.slice() : [],
+      userMidi: q.answer.type === 'key' ? value : null,
+      ok: ok, ms: Math.round(ms), at: Date.now()
+    });
+    this.qIndex++;
+    this.answeredAt = Date.now();
+    renderStage();
+    Audio2.stopAll();
+    if (ok){
+      if (Store.settings.autoNext){
+        this.timer = setTimeout(()=>{ if (this.live) this.advance(); }, AUTO_NEXT_MS);
+      }
+    }
+    /* 答错时给出正确答案的声音；识谱题无论对错都再放一次，强化「谱面↔音高」的联系 */
+    const rev = q.reveal && q.reveal.notes;
+    if (rev && rev.length && (!ok || q.staff)){
+      Audio2.play(rev, {
+        type: rev.length > 2 ? 'chord' : 'seq',
+        dur: q.staff && q.staff.stacked ? 1.5 : 1.1, gap:.5, vel:.85
+      });
+    }
+  },
+  /* 答题结束后点键盘：只听声音，不再计分 */
+  audition(midi){
+    if (!this.cur) return;
+    Audio2.stopAll();
+    Audio2.play([midi], {type:'single', dur:1.05, vel:.85});
+    Keyboard.flash([midi], 'lit', 900);
+  },
+  advance(){
+    clearTimeout(this.timer);
+    if (!this.live) return;
+    if (this.perRound > 0 && this.qIndex >= this.perRound){ this.finish(); return; }
+    this.spin();
+  },
+  finish(){
+    if (!this.live) return;
+    this.live = false;
+    Audio2.stopAll();
+    const total = this.items.length;
+    const acc = total ? Math.round(this.correct/total*100) : 0;
+    const avg = total ? Math.round(this.items.reduce((s,i)=>s+i.ms,0)/total) : 0;
+    const s = {
+      id: 's'+Date.now()+'_'+rnd(9999),
+      mode: this.mode, startedAt: this.startedAt, endedAt: Date.now(),
+      total: total, correct: this.correct, accuracy: acc, bestStreak: this.best,
+      avgMs: avg, items: this.items.slice()
+    };
+    if (total > 0) Store.addSession(s);
+    renderStage(true);
+    $('.stage') && $('.stage').scrollIntoView({block:'start', behavior:'smooth'});
+  },
+  quit(){
+    if (!this.live) return;
+    if (this.items.length === 0){ this.live = false; renderStage(); return; }
+    this.finish();
+  }
+};
+
+/* ------------------------------------------------------- 10. 舞台渲染 */
+function renderStage(){
+  const root = $('#stageMain'); if (!root) return;
+  if (Quiz.live){
+    root.className = shouldShowKeyboard() ? '' : 'no-kb';
+    root.innerHTML = questionHTML(); wireQuestion(); return;
+  }
+  root.className = '';
+  if (Quiz.items.length > 0){ root.innerHTML = resultHTML(); wireResult(); return; }
+  root.innerHTML = startCardHTML(); wireStart();
+}
+function wireResult(){
+  const a = $('#btnAgain'); if (a) a.onclick = () => { Quiz.items = []; Quiz.begin(); };
+  const b = $('#btnToRecords'); if (b) b.onclick = () => switchView('records');
+  const c = $('#btnBackStart'); if (c) c.onclick = () => { Quiz.items = []; renderStage(); };
+}
+
+function startCardHTML(){
+  const st = Store.settings;
+  const m = MODES[st.mode];
+  const lo = Math.min(st.lowMidi, st.highMidi), hi = Math.max(st.lowMidi, st.highMidi);
+  return ''+
+  '<div class="card startcard">'+
+    '<div class="start-hero">'+
+      '<div class="badge">'+m.icon+'</div>'+
+      '<div style="flex:1;min-width:180px">'+
+        '<h2>'+m.name+'</h2>'+
+        '<p>'+m.desc+'</p>'+
+      '</div>'+
+    '</div>'+
+    '<dl class="summary-list" style="margin:0">'+
+      '<div class="sum-item"><dt>基准音</dt><dd>'+fullName(st.refMidi)+'</dd></div>'+
+      '<div class="sum-item"><dt>音高范围</dt><dd>'+fullName(lo)+' – '+fullName(hi)+'</dd></div>'+
+      '<div class="sum-item"><dt>本轮题数</dt><dd>'+(st.perRound>0?st.perRound+' 题':'不限')+'</dd></div>'+
+      '<div class="sum-item"><dt>基准音提示</dt><dd>'+(st.refMode==='each'?'每题前':'开始时')+'</dd></div>'+
+    '</dl>'+
+    '<div class="qactions" style="margin:0">'+
+      '<button class="btn primary lg" id="btnStart">▶ 开始本轮练习</button>'+
+      '<button class="btn" id="btnTryRef">🔔 先听听基准音</button>'+
+    '</div>'+
+    '<div class="howto">'+
+      '<b>怎么用：</b>点击开始后先听到一次基准音（'+fullName(st.refMidi)+'），把它当作音高锚点。<br>'+
+      '听音时用鼠标或在屏幕上点键作答；键盘快捷键 <span class="kbd">空格</span> 重听、<span class="kbd">1-7</span> 选音级、<span class="kbd">Enter</span> 进入下一题。<br>'+
+      '每轮结束会自动记录成绩，可在「记录」标签页看到正确率折线图与薄弱项分析。'+
+    '</div>'+
+  '</div>';
+}
+function questionHTML(){
+  const q = Quiz.cur, st = Store.settings, m = MODES[st.mode];
+  const total = Quiz.perRound > 0 ? Quiz.perRound : '∞';
+  const acc = Quiz.items.length ? Math.round(Quiz.correct/Quiz.items.length*100) : 0;
+  const h = [];
+  h.push('<div class="card">');
+  h.push('<div class="card-head">'+
+      '<span class="tag">'+m.icon+' '+m.name+'</span>'+
+      '<span class="tag gray">第 '+(Quiz.qNo||1)+' / '+total+' 题</span>'+
+      '<div class="spacer"></div>'+
+      '<button class="btn ghost" id="btnQuit" style="padding:5px 10px;font-size:12px">结束本轮</button>'+
+    '</div>');
+  h.push('<div class="progress-row" style="margin-bottom:12px">'+
+      '<div class="bar"><i style="width:'+(Quiz.perRound>0?Math.min(100, Quiz.qIndex/Quiz.perRound*100):Math.min(96,Quiz.qIndex*6))+'%"></i></div>'+
+      '<div class="stat-mini">'+
+        '<span class="ok">对 <b>'+Quiz.correct+'</b></span>'+
+        '<span class="bad">错 <b>'+(Quiz.items.length-Quiz.correct)+'</b></span>'+
+        '<span>正确率 <b>'+acc+'%</b></span>'+
+        '<span>连对 <b>'+Quiz.streak+'</b></span>'+
+      '</div>'+
+    '</div>');
+  if (q && q.staff){
+    h.push('<div class="qvisual" id="qVisual" style="border-style:solid">'+
+      staffFor(q.staff.notes, q.staff.clef, {stacked:q.staff.stacked}) +'</div>');
+  } else {
+    h.push('<div class="qvisual" id="qVisual"><div class="orb idle"></div><div class="prompt">准备题目…</div></div>');
+  }
+  if (q){
+    h.push('<div class="qactions">'+
+      '<button class="btn primary" id="btnPlayQ">▶ 重新播放题目</button>'+
+      '<button class="btn soft" id="btnRef">🔔 基准音 '+fullName(st.refMidi)+'</button>'+
+      (q.audio ? '' : '<button class="btn" id="btnPlayQ2">🎧 试听谱面音符</button>')+
+    '</div>');
+    h.push('<p class="hint" id="qHint" style="margin-top:9px">'+q.prompt+'</p>');
+  } else {
+    h.push('<p class="hint">正在生成题目…</p>');
+  }
+  h.push('</div>');
+
+  /* 作答区（答题前后高度保持一致，答案统一显示在键盘下方） */
+  h.push('<div class="card answer-area" id="answerCard">'+answerHTML()+'</div>');
+
+  /* 键盘 */
+  const showKb = shouldShowKeyboard();
+  if (showKb){
+    const isKeyQ = q && q.answer.type === 'key';
+    const hintTxt = Quiz.answered
+      ? (isKeyQ ? '绿色是正确答案，点击琴键试听对比' : '点击琴键试听对比')
+      : (isKeyQ ? '点击琴键作答' : '仅作音高参照，不是本题答案');
+    h.push('<div class="kbwrap" id="kbSection">'+
+      '<div class="kbhead"><h3>🎹 音高键盘</h3>'+
+      '<span class="hint" id="kbHint">'+hintTxt+'</span></div>'+
+      '<div class="kbscroll"><div class="keyboard" id="keyboard"></div></div>'+
+    '</div>');
+  }
+
+  /* 答题结果区：固定在键盘下方，避免作答区高度跳变 */
+  if (Quiz.answered) h.push(feedbackHTML());
+  return h.join('');
+}
+function shouldShowKeyboard(){
+  const q = Quiz.cur;
+  if (!q) return true;
+  if (q.answer.type === 'key') return true;
+  if (q.answer.type === 'name') return false;
+  return true;
+}
+function answerHTML(){
+  const q = Quiz.cur;
+  if (!q) return '<div class="hint">题目生成中…</div>';
+  return optionsHTML(q);
+}
+/* 答题结果（置于键盘下方，使用户看到答案时上方布局不位移） */
+function feedbackHTML(){
+  const q = Quiz.cur;
+  if (!q || !Quiz.answered) return '';
+  const last = Quiz.items[Quiz.items.length-1];
+  if (!last) return '';
+  const ok = last.ok;
+  const willAuto = ok && Store.settings.autoNext;
+  const isLast = Quiz.perRound > 0 && Quiz.qIndex >= Quiz.perRound;
+  const multi = q.reveal && q.reveal.notes && q.reveal.notes.length > 1;
+  const h = [];
+  h.push('<div class="card resultbox" id="resultBox">');
+  h.push('<div class="feedback '+(ok?'ok':'bad')+'">'+
+    '<div class="fb-top"><span class="fb-icon">'+(ok?'✓':'✕')+'</span>'+(ok?'回答正确':'回答错误')+
+      '<span class="spacer"></span><span style="font-weight:600;font-size:12px;color:var(--muted)">用时 '+fmtTime(last.ms)+'</span>'+
+    '</div>'+
+    '<div class="fb-body">正确答案：<code>'+esc(q.answer.label)+'</code>'+
+      (ok?'':'　你的答案：<code>'+esc(last.userText)+'</code>')+
+      (multi?'　构成音：'+q.reveal.notes.map(n => '<code>'+fullName(n)+'</code>').join(' '):'')+
+    '</div>'+
+    '<div class="fb-actions">'+
+      '<button class="btn soft" id="btnReplay">🔁 再听一遍</button>'+
+      '<button class="btn primary" id="btnNext">'+(isLast?'查看本轮结果':'下一题')+' ▸</button>'+
+    '</div>'+
+    (willAuto ? '<div class="countdown"><i style="animation-duration:'+AUTO_NEXT_MS+'ms"></i></div>' : '')+
+  '</div>');
+  if (!ok) h.push('<div class="tip-listen">💡 现在可以<b>点击下方琴键</b>逐个试听，对比你的答案与正确答案的音高差别</div>');
+  if (multi || (q.reveal && q.reveal.notes && !q.staff)){
+    h.push('<div class="reveal-staff" style="margin-top:10px">'+
+      staffFor(q.reveal.notes, null, {stacked:q.answer.type === 'chord'}) +'</div>');
+  }
+  h.push('</div>');
+  return h.join('');
+}
+/* 标记选项：正确项高亮、用户错选项标红、其余淡出 */
+function optionMark(val, q, last){
+  if (!Quiz.answered || !last) return '';
+  if (val === q.answer.value) return ' correct';
+  if (!last.ok && val === last.userValue) return ' wrong';
+  return ' dim';
+}
+function optionsHTML(q){
+  const t = q.answer.type, h = [];
+  const last = Quiz.answered ? Quiz.items[Quiz.items.length-1] : null;
+  const M = val => optionMark(val, q, last);
+  if (t === 'key'){
+    const msg = Quiz.answered
+      ? '绿色琴键是正确答案，可按琴键逐个试听对比'
+      : (q.staff ? '在下方键盘上点出谱面对应的音' : '在下方键盘上点出你听到的音');
+    h.push('<p class="hint" style="text-align:center">'+msg+'</p>');
+    return h.join('');
+  }
+  if (t === 'degree'){
+    h.push('<div class="opt-grid g7">');
+    rangeArr(1,7).forEach(d => {
+      h.push('<button class="opt'+M(d)+'" data-ans="'+d+'"><b>'+d+'</b><span>'+['do','re','mi','fa','sol','la','si'][d-1]+'</span></button>');
+    });
+    h.push('</div><p class="hint" style="text-align:center">以基准音为主音的大调音级</p>');
+    return h.join('');
+  }
+  if (t === 'interval'){
+    const list = INTERVALS.filter(i => Store.settings.intervalSet.indexOf(i.s) >= 0);
+    const use = list.length ? list : INTERVALS;
+    h.push('<div class="opt-grid g13">');
+    use.forEach(i => {
+      h.push('<button class="opt small'+M(i.s)+'" data-ans="'+i.s+'"><b>'+i.cn+'</b><span>'+i.ab+'</span></button>');
+    });
+    h.push('</div>');
+    return h.join('');
+  }
+  if (t === 'chord'){
+    const list = availChords();
+    h.push('<div class="opt-grid gc">');
+    list.forEach(c => {
+      h.push('<button class="opt small'+M(c.id)+'" data-ans="'+c.id+'"><b>'+c.cn+'</b><span>'+(c.id===c.ab?c.ab:'1 '+c.iv.join(' '))+'</span></button>');
+    });
+    h.push('</div><p class="hint" style="text-align:center">按和弦性质作答</p>');
+    return h.join('');
+  }
+  if (t === 'name'){
+    h.push('<div class="opt-grid g12">');
+    for (let pc = 0; pc < 12; pc++){
+      h.push('<button class="opt'+M(pc)+'" data-ans="'+pc+'"><b>'+PC_NAMES[pc]+'</b><span>'+SOLFEGE[pc]+'</span></button>');
+    }
+    h.push('</div><p class="hint" style="text-align:center">只判断音名，不用管八度</p>');
+    return h.join('');
+  }
+  return '';
+}
+
+function resultHTML(){
+  const total = Quiz.items.length, correct = Quiz.correct;
+  const acc = total ? Math.round(correct/total*100) : 0;
+  const avg = total ? Math.round(Quiz.items.reduce((s,i)=>s+i.ms,0)/total) : 0;
+  const prev = Store.sessions.filter(s => s.mode === Quiz.mode)[1];
+  const prevAcc = prev ? prev.accuracy : null;
+  const delta = prevAcc == null ? null : acc - prevAcc;
+  const R = 34, C = 2*Math.PI*R;
+  const circumference = C.toFixed(1);
+  const stroke = (C * (1 - acc/100)).toFixed(1);
+  const color = acc >= 85 ? '#0f9d76' : acc >= 60 ? '#5b53e8' : '#e5484d';
+  return ''+
+  '<div class="card resultcard">'+
+    '<div class="card-head"><span class="tag">本轮完成</span><span class="tag gray">'+MODES[Quiz.mode].name+'</span></div>'+
+    '<div class="result-hero">'+
+      '<div class="ring"><svg viewBox="0 0 86 86">'+
+        '<circle cx="43" cy="43" r="'+R+'" fill="none" stroke="#eceefa" stroke-width="9"/>'+
+        '<circle cx="43" cy="43" r="'+R+'" fill="none" stroke="'+color+'" stroke-width="9" stroke-linecap="round" '+
+          'stroke-dasharray="'+circumference+'" stroke-dashoffset="'+stroke+'"/></svg>'+
+        '<div class="rc" style="color:'+color+'"><b>'+acc+'%</b><small>正确率</small></div></div>'+
+      '<div style="flex:1;min-width:190px">'+
+        '<dl class="summary-list" style="margin:0">'+
+          '<div class="sum-item"><dt>答对 / 总题</dt><dd>'+correct+' / '+total+'</dd></div>'+
+          '<div class="sum-item"><dt>平均用时</dt><dd>'+fmtTime(avg)+'</dd></div>'+
+          '<div class="sum-item"><dt>最长连对</dt><dd>'+Quiz.best+'</dd></div>'+
+          '<div class="sum-item"><dt>对比上次</dt><dd>'+(delta==null?'—':(delta>0?'+':'')+delta+'%')+'</dd></div>'+
+        '</dl>'+
+      '</div>'+
+    '</div>'+
+    '<div class="qactions" style="margin-top:16px">'+
+      '<button class="btn primary" id="btnAgain">🔁 再来一轮</button>'+
+      '<button class="btn" id="btnToRecords">📊 查看记录与分析</button>'+
+      '<button class="btn ghost" id="btnBackStart">← 返回准备页</button>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ------------------------------------------------------- 11. 事件绑定 */
+function wireStart(){
+  const b = $('#btnStart'); if (b) b.onclick = () => { Audio2.resume(); Quiz.begin(); };
+  const t = $('#btnTryRef'); if (t) t.onclick = () => { Audio2.resume(); Audio2.play([Store.settings.refMidi], {type:'single', dur:1.1, vel:.85}); Keyboard.flash([Store.settings.refMidi],'lit',1200); };
+}
+function wireQuestion(){
+  const q = Quiz.cur;
+  const isKeyQ = !!q && q.answer.type === 'key';
+  Keyboard.setMode(!q ? 'view' : (Quiz.answered ? 'listen' : (isKeyQ ? 'answer' : 'view')));
+  if (q && Quiz.answered && q.reveal){
+    const last = Quiz.items[Quiz.items.length-1];
+    if (isKeyQ && last && !last.ok && last.userMidi != null) Keyboard.mark([last.userMidi], 'wrong', false);
+    Keyboard.mark(q.reveal.notes, 'correct', false);
+  }
+  const bp = $('#btnPlayQ'); if (bp) bp.onclick = () => Quiz.playQuestion();
+  const bp2 = $('#btnPlayQ2'); if (bp2) bp2.onclick = () => Quiz.playStaff();
+  const br = $('#btnRef'); if (br) br.onclick = () => { Audio2.stopAll(); Quiz.playRef(); };
+  const bq = $('#btnQuit'); if (bq) bq.onclick = () => Quiz.quit();
+  const bn = $('#btnNext'); if (bn) bn.onclick = () => Quiz.advance();
+  const brp = $('#btnReplay'); if (brp) brp.onclick = () => { Audio2.stopAll(); Quiz.playQuestion(); };
+  $$('[data-ans]').forEach(el => {
+    el.onclick = () => {
+      if (Quiz.answered) return;
+      const raw = el.dataset.ans;
+      const val = /^\d+$/.test(raw) ? Number(raw) : raw;
+      Quiz.submit(val, labelOfAnswer(val));
+    };
+  });
+  $$('.key', $('#keyboard') || document.createElement('div')).forEach(k => {
+    k.onclick = () => {
+      if (!Quiz.cur) return;
+      const midi = Number(k.dataset.midi);
+      /* 作答后点琴键 = 试听对比，不再计分 */
+      if (Quiz.answered){ Quiz.audition(midi); return; }
+      if (Quiz.cur.answer.type !== 'key') return;
+      Quiz.submit(midi, fullName(midi));
+    };
+  });
+  /* 结果区若在视口外，轻推进入视野（已在视口内则不滚动） */
+  if (Quiz.answered){
+    const rb = $('#resultBox');
+    if (rb && rb.scrollIntoView) rb.scrollIntoView({block:'nearest', behavior:'smooth'});
+  } else {
+    /* 新题目出现时确保题目卡可见（横屏下上一题曾把页面滚下去） */
+    const qc = $('#stageMain > .card');
+    if (qc && qc.scrollIntoView) qc.scrollIntoView({block:'nearest', behavior:'smooth'});
+  }
+}
+function labelOfAnswer(v){
+  const q = Quiz.cur; if (!q) return String(v);
+  const t = q.answer.type;
+  if (t === 'degree') return '第 '+v+' 级（'+['do','re','mi','fa','sol','la','si'][v-1]+'）';
+  if (t === 'interval'){ const iv = INTERVALS.filter(i => i.s === v)[0]; return iv ? iv.cn : String(v); }
+  if (t === 'chord'){ const c = CHORD_BY_ID[v]; return c ? c.cn : String(v); }
+  if (t === 'name') return PC_NAMES[v] + '（' + SOLFEGO_SAFE(v) + '）';
+  return fullName(v);
+}
+function SOLFEGO_SAFE(v){ return SOLFEGE[v] || ''; }
+
+/* ------------------------------------------------------- 12. 记录与统计 */
+/* ============ 题型分类引擎：把每道题映射到若干个「类别维度」 ============ */
+const ANSWER_KINDS = {key:'键盘作答', degree:'答音级', name:'答音名', interval:'答音程名', chord:'答和弦名'};
+function itemAnswerType(it){
+  if (it.type) return it.type;
+  /* 旧数据兜底：按模块与子类型推断 */
+  if (it.mode === 'single') return it.sub === 'degree' ? 'degree' : 'key';
+  if (it.mode === 'interval' || it.mode === 'readiv') return 'interval';
+  if (it.mode === 'block' || it.mode === 'arp' || it.mode === 'readchord') return 'chord';
+  return /^[A-G]/.test(String(it.correctText || '')) ? 'name' : 'key';
+}
+function itemPc(it){
+  if (it.pc != null) return it.pc;
+  const m = /^([A-G])([♯#]?)/.exec(String(it.correctText || ''));
+  if (!m) return null;
+  const idx = PC_NAMES.indexOf(m[1] + (m[2] ? '♯' : ''));
+  return idx >= 0 ? idx : null;
+}
+const isIvItem = it => (it.mode === 'interval' || it.mode === 'readiv');
+const isChItem = it => (it.mode === 'block' || it.mode === 'arp' || it.mode === 'readchord');
+const DIMS = {
+  mode:     {name:'练习模块', fn: it => ({k:it.mode, label: modeInfo(it.mode).name, mode:it.mode})},
+  answer:   {name:'作答方式', fn: it => { const t = itemAnswerType(it); return {k:'t:'+t, label: ANSWER_KINDS[t] || t}; }},
+  interval: {name:'音程种类', fn: it => isIvItem(it) ? {k:'i:'+it.correctText, label:it.correctText} : null},
+  chord:    {name:'和弦类型', fn: it => isChItem(it) ? {k:'c:'+it.correctText, label:it.correctText} : null},
+  pitch:    {name:'音名',     fn: it => { const pc = itemPc(it); return pc == null ? null : {k:'p:'+pc, label:PC_NAMES[pc]+' '+SOLFEGE[pc], pc:pc}; }},
+  dir:      {name:'听辨方向', fn: it => (it.mode === 'interval' && it.sub) ? {k:'d:'+it.sub, label:(it.sub === 'down' ? '下行' : '上行')} : null}
+};
+const REC_FILTERS = [{id:'all', label:'全部'}, {id:'ear', label:'🎧 练耳'}, {id:'read', label:'🎼 识谱'}]
+  .concat(Object.keys(MODES).filter(k => !MODES[k].legacy).map(k => ({id:k, label: MODES[k].name})));
+function recFilterName(id){
+  const f = REC_FILTERS.filter(x => x.id === id)[0];
+  return f ? f.label : '全部';
+}
+function defaultDimFor(filter){
+  if (filter === 'single' || filter === 'readnote') return 'pitch';
+  if (filter === 'interval' || filter === 'readiv') return 'interval';
+  if (filter === 'block' || filter === 'arp' || filter === 'readchord') return 'chord';
+  return 'mode';
+}
+const Records = {filter:'all', dim:null};
+
+function recMatch(filter){
+  return it => {
+    if (!filter || filter === 'all') return true;
+    if (filter === 'ear' || filter === 'read') return groupOf(it.mode) === filter;
+    return it.mode === filter;
+  };
+}
+/* 按分类筛选轮次；每轮只保留命中的题目 */
+function recSessions(filter){
+  const mf = recMatch(filter), out = [];
+  Store.sessions.forEach(s => {
+    const items = (s.items || []).filter(mf);
+    if (items.length) out.push({s:s, items:items});
+  });
+  return out;
+}
+function recStats(pairs){
+  const items = [];
+  pairs.forEach(p => p.items.forEach(it => items.push(it)));
+  const total = items.length;
+  const correct = items.filter(i => i.ok).length;
+  let streak = 0, best = 0;
+  items.slice().sort((a,b) => (a.at||0) - (b.at||0)).forEach(i => {
+    if (i.ok){ streak++; best = Math.max(best, streak); } else streak = 0;
+  });
+  return {
+    items:items, sessions:pairs.length, total:total, correct:correct,
+    accuracy: total ? Math.round(correct/total*100) : 0,
+    avgMs: total ? Math.round(items.reduce((a,b) => a + (b.ms||0), 0)/total) : 0,
+    bestStreak: best
+  };
+}
+/* 按某一维度把题目分组统计 */
+function groupStats(items, dim){
+  const def = DIMS[dim];
+  if (!def) return [];
+  const map = {};
+  items.forEach(it => {
+    const d = def.fn(it);
+    if (!d) return;
+    if (!map[d.k]) map[d.k] = {label:d.label, mode:d.mode, pc:d.pc, n:0, ok:0, ms:0};
+    map[d.k].n++;
+    if (it.ok) map[d.k].ok++;
+    map[d.k].ms += (it.ms || 0);
+  });
+  return Object.keys(map).map(k => {
+    const g = map[k];
+    return {
+      key:k, label:g.label, mode:g.mode, pc:g.pc, n:g.n, ok:g.ok,
+      acc:Math.round(g.ok/g.n*100), avgMs:Math.round(g.ms/g.n)
+    };
+  });
+}
+/* 易混淆：答错时把正确答案听/选成了什么 */
+function recConfusions(items, limit){
+  const map = {};
+  items.forEach(it => {
+    if (it.ok || !it.userText) return;
+    const k = it.correctText + '\u0001' + it.userText;
+    if (!map[k]) map[k] = {correct:it.correctText, user:it.userText, n:0, mode:it.mode};
+    map[k].n++;
+  });
+  return Object.keys(map).map(k => map[k]).sort((a,b) => b.n - a.n).slice(0, limit || 6);
+}
+function accColor(acc){ return acc < 60 ? '#e5484d' : acc < 80 ? '#e08a0b' : '#0f9d76'; }
+
+/* ============================ 记录页渲染 ============================ */
+function renderRecords(){
+  const root = $('#recordsRoot');
+  if (!Store.sessions.length){
+    root.innerHTML = '<div class="card"><div class="card-head"><h1 style="font-size:17px">练习记录</h1></div>'+
+      '<div class="empty">还没有练习数据。<br>回到「练习」标签页完成一轮，这里就会出现按题型分类的正确率、走势与混淆分析。</div></div>';
+    return;
+  }
+  const pairs = recSessions(Records.filter);
+  const st = recStats(pairs);
+  if (!st.total){
+    root.innerHTML = filterBarHTML() + '<div class="empty">该分类下还没有练习数据，换个分类看看。</div>';
+    wireRecords();
+    return;
+  }
+
+  /* 分类维度：自动挑选 + 允许手动切换 */
+  const availDims = Object.keys(DIMS).filter(d => groupStats(st.items, d).length >= 1);
+  let dim = Records.dim;
+  if (!dim || availDims.indexOf(dim) < 0) dim = defaultDimFor(Records.filter);
+  if (availDims.indexOf(dim) < 0) dim = availDims[0] || 'mode';
+  Records.dim = dim;
+  const groups = groupStats(st.items, dim);
+
+  /* 走势：每一轮在该分类下的正确率 */
+  const pts = pairs.slice().sort((a,b) => a.s.startedAt - b.s.startedAt).slice(-24).map(p => {
+    const ok = p.items.filter(i => i.ok).length;
+    return {x:p.s.startedAt, y:Math.round(ok/p.items.length*100), mode:p.s.mode, total:p.items.length};
+  });
+  /* 前后期对比 */
+  const qn = Math.max(1, Math.ceil(pairs.length/3));
+  const rateOf = arr => arr.length
+    ? Math.round(arr.reduce((a,p) => a + p.items.filter(i => i.ok).length/p.items.length*100, 0)/arr.length) : 0;
+  const dAcc = pairs.length >= 3 ? Math.round(rateOf(pairs.slice(-qn)) - rateOf(pairs.slice(0, qn))) : null;
+
+  const h = [];
+  h.push(filterBarHTML());
+  h.push('<div class="grid-cards">'+
+    kpi('分类练习题数', st.total, '题', null)+
+    kpi('分类正确率', st.accuracy, '%', dAcc == null ? null : (dAcc >= 0 ? '+' : '') + dAcc + '% <span style="color:var(--muted);font-weight:500">后期 vs 前期</span>', dAcc >= 0 ? 'up' : 'down')+
+    kpi('涉及轮数', st.sessions, '轮', null)+
+    kpi('平均反应', (st.avgMs/1000).toFixed(1), 's', null)+
+    kpi('最长连对', st.bestStreak, '题', null)+
+  '</div>');
+
+  /* 走势 + 题型细分 */
+  h.push('<div class="cols">');
+  h.push('<div class="card"><div class="card-head"><h3 style="font-size:14px">正确率走势</h3>'+
+    '<span class="tag gray">'+recFilterName(Records.filter)+' · 最近 '+pts.length+' 轮</span><div class="spacer"></div>'+
+    '<div class="legend"><span><i style="background:var(--brand)"></i>每轮正确率</span><span><i style="background:#e08a0b"></i>3轮移动平均</span></div>'+
+    '</div>'+ lineChart(pts, window.innerWidth < 620) +'</div>');
+
+  h.push('<div class="card"><div class="card-head"><h3 style="font-size:14px">题型细分</h3>'+
+    '<span class="tag gray">'+groups.length+' 类 · '+st.total+' 题</span></div>'+
+    dimChipsHTML(availDims, dim)+
+    '<div id="recDimBars" style="margin-top:11px">'+ dimBarsHTML(groups, dim) +'</div>'+
+    '<p class="hint" style="margin-top:9px">'+
+      (dim === 'mode' ? '点击任意一行可下钻到该模块的细分数据' : '按正确率从低到高排列，越低越该重点练')+
+    '</p>'+
+  '</div>');
+  h.push('</div>');
+
+  /* 活跃度 + 易错/易混淆 */
+  h.push('<div class="cols">');
+  h.push('<div class="card"><div class="card-head"><h3 style="font-size:14px">近 14 天练习量</h3></div>'+
+    activityBars() +'</div>');
+  h.push('<div class="card"><div class="card-head"><h3 style="font-size:14px">易错与混淆</h3>'+
+    '<span class="tag gray">'+recFilterName(Records.filter)+'</span></div>'+ weakAndConfusedHTML(st.items) +'</div>');
+  h.push('</div>');
+
+  /* 历史明细 */
+  h.push('<div class="card"><div class="card-head"><h3 style="font-size:14px">历史明细</h3>'+
+    '<span class="tag gray">'+pairs.length+' 轮命中</span><div class="spacer"></div>'+
+    '<div class="row-wrap">'+
+      '<button class="btn" id="btnImport" style="padding:6px 12px;font-size:12.5px">导入 JSON</button>'+
+      '<button class="btn" id="btnExport" style="padding:6px 12px;font-size:12.5px">导出 JSON</button>'+
+      '<button class="btn danger" id="btnClear" style="padding:6px 12px;font-size:12.5px">清空记录</button>'+
+    '</div>'+
+    '</div><div class="history" id="historyBox">'+ historyHTML(pairs) +'</div></div>');
+
+  root.innerHTML = h.join('');
+  wireRecords();
+}
+function filterBarHTML(){
+  const chips = REC_FILTERS.map(f =>
+    '<button class="chip'+(Records.filter === f.id ? ' on' : '')+'" data-filter="'+f.id+'">'+f.label+'</button>').join('');
+  return '<div class="card" style="padding:12px 14px">'+
+    '<div class="card-head" style="margin-bottom:9px">'+
+      '<h3 style="font-size:14px">分类分析</h3>'+
+      '<span class="tag gray">当前：'+recFilterName(Records.filter)+'</span>'+
+    '</div>'+
+    '<div class="chips" id="recFilters">'+chips+'</div>'+
+    '<p class="hint" style="margin-top:9px">选择分类后，下方的正确率、走势、题型细分与混淆分析都会只统计该分类。</p>'+
+  '</div>';
+}
+function dimChipsHTML(avail, cur){
+  return '<div class="chips" id="recDims" style="margin-top:10px">'+
+    avail.map(d => '<button class="chip'+(d === cur ? ' on' : '')+'" data-dim="'+d+'">'+DIMS[d].name+'</button>').join('')+
+  '</div>';
+}
+function dimBarsHTML(groups, dim){
+  if (!groups.length) return '<div class="empty">暂无数据</div>';
+  const sorted = groups.slice().sort((a,b) => a.acc - b.acc);
+  return '<div class="hbar">' + sorted.map(g => {
+    const drill = (dim === 'mode' && g.mode) ? ' clickable' : '';
+    const attr = (dim === 'mode' && g.mode) ? ' data-rowmode="'+g.mode+'" title="点击下钻：'+esc(g.label)+'"' : ' title="'+esc(g.label)+'"';
+    return '<div class="hrow'+drill+'"'+attr+'>'+
+      '<span class="hlabel">'+esc(g.label)+'</span>'+
+      '<span class="track"><i style="width:'+Math.max(3,g.acc)+'%;background:'+accColor(g.acc)+'"></i></span>'+
+      '<span class="val">'+g.acc+'%<br><span style="font-size:10px;color:var(--muted)">'+g.n+'题 · '+(g.avgMs/1000).toFixed(1)+'s</span></span>'+
+    '</div>';
+  }).join('') + '</div>';
+}
+function kpi(label, val, unit, delta, dir){
+  return '<dl class="kpi"><dt>'+label+'</dt><dd>'+val+(unit?'<small>'+unit+'</small>':'')+'</dd>'+
+    (delta ? '<div class="delta '+(dir||'')+'">'+delta+'</div>' : '')+'</dl>';
+}
+function lineChart(pts, compact){
+  if (pts.length < 2) return '<div class="empty">至少完成 2 轮练习后即可看到走势曲线。</div>';
+  const W = compact ? 358 : 720, H = compact ? 208 : 260;
+  const L = compact ? 30 : 44, R = compact ? 10 : 14, T = compact ? 14 : 16, B = compact ? 24 : 30;
+  const fs = compact ? 9 : 11, fsx = compact ? 8.5 : 10.5;
+  const maxLabels = compact ? 4 : 6;
+  const iw = W - L - R, ih = H - T - B;
+  const X = i => L + (pts.length === 1 ? iw/2 : i/(pts.length-1)*iw);
+  const Y = v => T + (1 - v/100)*ih;
+  const p = [];
+  p.push('<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet">');
+  for (let v = 0; v <= 100; v += 25){
+    p.push('<line x1="'+L+'" y1="'+Y(v)+'" x2="'+(W-R)+'" y2="'+Y(v)+'" stroke="#eceefa" stroke-width="1"/>');
+    p.push('<text x="'+(L-7)+'" y="'+(Y(v)+4)+'" font-size="'+fs+'" fill="#9aa0bd" text-anchor="end">'+v+'%</text>');
+  }
+  /* 目标线 80% */
+  p.push('<line x1="'+L+'" y1="'+Y(80)+'" x2="'+(W-R)+'" y2="'+Y(80)+'" stroke="#0f9d76" stroke-width="1.2" stroke-dasharray="5 5" opacity=".55"/>');
+  p.push('<text x="'+(W-R)+'" y="'+(Y(80)-5)+'" font-size="'+fsx+'" fill="#0f9d76" text-anchor="end">目标 80%</text>');
+  /* 面积 */
+  let area = 'M '+X(0)+' '+Y(0);
+  pts.forEach((d,i) => { area += ' L '+X(i)+' '+Y(d.y); });
+  area += ' L '+X(pts.length-1)+' '+Y(0)+' Z';
+  p.push('<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="#5b53e8" stop-opacity=".26"/>'+
+    '<stop offset="100%" stop-color="#5b53e8" stop-opacity="0"/></linearGradient></defs>');
+  p.push('<path d="'+area+'" fill="url(#lg)"/>');
+  /* 移动平均 */
+  const ma = pts.map((d,i) => {
+    const seg = pts.slice(Math.max(0, i-2), i+1);
+    return seg.reduce((a,b) => a+b.y, 0)/seg.length;
+  });
+  p.push('<path d="'+ma.map((v,i) => (i?'L':'M')+' '+X(i)+' '+Y(v)).join(' ')+'" fill="none" stroke="#e08a0b" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round"/>');
+  /* 主线 */
+  p.push('<path d="'+pts.map((d,i) => (i?'L':'M')+' '+X(i)+' '+Y(d.y)).join(' ')+'" fill="none" stroke="#5b53e8" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>');
+  /* 点 */
+  pts.forEach((d,i) => {
+    p.push('<circle cx="'+X(i)+'" cy="'+Y(d.y)+'" r="'+(compact?3.4:4.2)+'" fill="#fff" stroke="#5b53e8" stroke-width="2.4">'+
+      '<title>'+fmtDate(d.x)+' · '+modeInfo(d.mode).name+' · '+d.y+'%（'+d.total+'题）</title></circle>');
+  });
+  /* 标注最新 */
+  const li = pts.length-1;
+  p.push('<text x="'+X(li)+'" y="'+(Y(pts[li].y)-9)+'" font-size="'+(compact?10.5:12)+'" font-weight="700" fill="#5b53e8" text-anchor="end">'+pts[li].y+'%</text>');
+  /* x 轴 */
+  const step = Math.max(1, Math.ceil(pts.length/maxLabels));
+  pts.forEach((d,i) => {
+    if (i % step && i !== li) return;
+    const dt = new Date(d.x);
+    p.push('<text x="'+X(i)+'" y="'+(H-7)+'" font-size="'+fsx+'" fill="#9aa0bd" text-anchor="middle">'+(dt.getMonth()+1)+'/'+dt.getDate()+'</text>');
+  });
+  p.push('</svg>');
+  return p.join('');
+}
+function activityBars(){
+  const pairs = recSessions(Records.filter);
+  const days = 14, today = new Date(); today.setHours(0,0,0,0);
+  const arr = [];
+  for (let i = days-1; i >= 0; i--){
+    const d = new Date(today.getTime() - i*86400000);
+    const next = d.getTime() + 86400000;
+    const n = pairs.filter(p => p.s.startedAt >= d.getTime() && p.s.startedAt < next)
+      .reduce((a,p) => a + p.items.length, 0);
+    arr.push({label:(d.getMonth()+1)+'/'+d.getDate(), n:n});
+  }
+  const max = Math.max(1, Math.max.apply(null, arr.map(a => a.n)));
+  return '<div class="activity">' + arr.map(a => {
+    const hp = a.n ? Math.max(6, Math.round(a.n/max*100)) : 0;
+    return '<div class="acol" title="'+a.label+'：'+a.n+' 题">'+
+      '<span class="abox">'+(a.n ? '<i style="height:'+hp+'%"></i>' : '')+'</span>'+
+      '<b>'+(a.label)+'</b></div>';
+  }).join('') + '</div><p class="hint" style="margin-top:6px">柱高表示当天在该分类下完成的题量</p>';
+}
+/* 易错题型 + 易混淆对照 */
+function weakAndConfusedHTML(items){
+  if (!items.length) return '<div class="empty">暂无数据</div>';
+  const broad = (Records.filter === 'all' || Records.filter === 'ear' || Records.filter === 'read');
+  const map = {};
+  items.forEach(it => {
+    const k = it.mode + '|' + it.correctText;
+    if (!map[k]) map[k] = {label: it.correctText, mode:it.mode, n:0, ok:0};
+    map[k].n++; if (it.ok) map[k].ok++;
+  });
+  const weak = Object.keys(map).map(k => map[k]).filter(g => g.n >= 2)
+    .map(g => ({
+      label: (broad ? modeInfo(g.mode).name + '·' : '') + g.label,
+      n: g.n, acc: Math.round(g.ok/g.n*100)
+    }))
+    .sort((a,b) => a.acc - b.acc).slice(0, 5);
+  const conf = recConfusions(items, 6);
+  const h = [];
+  h.push('<div class="rec-sub">正确率最低的题型</div>');
+  if (!weak.length){
+    h.push('<div class="empty" style="padding:14px 12px">同一题型再练几题就能识别薄弱项</div>');
+  } else {
+    h.push('<div class="hbar">');
+    weak.forEach(g => {
+      h.push('<div class="hrow"><span class="hlabel" title="'+esc(g.label)+'">'+esc(g.label)+'</span>'+
+        '<span class="track"><i style="width:'+Math.max(3,g.acc)+'%;background:'+accColor(g.acc)+'"></i></span>'+
+        '<span class="val">'+g.acc+'%<br><span style="font-size:10px;color:var(--muted)">'+g.n+'题</span></span></div>');
+    });
+    h.push('</div>');
+  }
+  h.push('<div class="rec-sub">最容易混淆</div>');
+  if (!conf.length){
+    h.push('<div class="empty" style="padding:14px 12px">还没有答错记录，保持住</div>');
+  } else {
+    h.push('<div class="conflist">' + conf.map(c =>
+      '<div class="confline"><code>'+esc(c.correct)+'</code>'+
+      '<span class="arrow">→</span><code class="bad">'+esc(c.user)+'</code>'+
+      '<span class="n">'+c.n+' 次</span></div>').join('') + '</div>'+
+      '<p class="hint" style="margin-top:9px">左边是正确答案，右边是你误选/误听的答案</p>');
+  }
+  return h.join('');
+}
+function historyHTML(pairs){
+  if (!pairs || !pairs.length) return '<div class="empty">该分类下暂无记录</div>';
+  const broad = (Records.filter === 'all' || Records.filter === 'ear' || Records.filter === 'read');
+  return pairs.slice(0, 60).map(p => {
+    const s = p.s, items = p.items;
+    const ok = items.filter(i => i.ok).length;
+    const acc = Math.round(ok/items.length*100);
+    const m = modeInfo(s.mode);
+    const rows = items.map(it =>
+      '<div class="qrow '+(it.ok?'ok':'no')+'"><span class="qi">'+(it.ok?'✓':'✕')+'</span>'+
+      '<span class="qq">'+(broad ? '<i class="qmode">'+modeInfo(it.mode).name+'</i>' : '')+
+        esc(it.correctText)+(it.ok?'':'　<span style="color:var(--muted)">你的答案：</span><b style="color:var(--bad)">'+esc(it.userText)+'</b>')+'</span>'+
+      '<span class="qt">'+(it.ms/1000).toFixed(1)+'s</span></div>').join('');
+    return '<div class="hitem" data-sid="'+s.id+'">'+
+      '<button class="hrow2">'+
+        '<span class="hdate">'+fmtDate(s.startedAt)+'</span>'+
+        '<span class="hmode">'+m.icon+' '+m.name+'</span>'+
+        '<span class="hscore">'+ok+'/'+items.length+' 题 · 均 '+(items.reduce((a,b) => a+(b.ms||0), 0)/items.length/1000).toFixed(1)+'s</span>'+
+        '<span class="hacc" style="color:'+accColor(acc)+'">'+acc+'%</span>'+
+        '<span class="chev">▼</span>'+
+      '</button>'+
+      '<div class="hdetail"><div class="qlist">'+rows+'</div>'+
+      '<div style="margin-top:10px;display:flex;justify-content:flex-end">'+
+        '<button class="btn danger" data-del="'+s.id+'" style="padding:5px 11px;font-size:12px">删除这轮</button>'+
+      '</div></div>'+
+    '</div>';
+  }).join('');
+}
+function wireRecords(){
+  $$('#recFilters .chip').forEach(c => {
+    c.onclick = () => { Records.filter = c.dataset.filter; Records.dim = null; renderRecords(); };
+  });
+  $$('#recDims .chip').forEach(c => {
+    c.onclick = () => { Records.dim = c.dataset.dim; renderRecords(); };
+  });
+  /* 点模块行下钻 */
+  $$('#recordsRoot .hrow.clickable').forEach(r => {
+    r.onclick = () => {
+      Records.filter = r.dataset.rowmode;
+      Records.dim = null;
+      renderRecords();
+      toast('已下钻到「'+modeInfo(r.dataset.rowmode).name+'」');
+    };
+  });
+  $$('.hitem>.hrow2').forEach(b => {
+    b.onclick = () => b.parentElement.classList.toggle('open');
+  });
+  $$('[data-del]').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      Store.removeSession(b.dataset.del);
+      renderRecords(); toast('已删除该轮记录');
+    };
+  });
+  const ex = $('#btnExport'); if (ex) ex.onclick = exportJSON;
+  const im = $('#btnImport'); if (im) im.onclick = importJSON;
+  const cl = $('#btnClear'); if (cl) cl.onclick = () => {
+    if (confirm('确定清空全部 ' + Store.sessions.length + ' 轮练习记录？此操作不可恢复。')){
+      Store.clearAll(); renderRecords(); toast('记录已清空');
+    }
+  };
+}
+function exportJSON(){
+  const data = {exportedAt:new Date().toISOString(), settings:Store.settings, sessions:Store.sessions};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'yinlv-records-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 3000);
+  toast('已导出 JSON');
+}
+/* 把任意来源的数据规整为有效 session 数组（去文件内重复 id、补全 id） */
+function normalizeImport(data){
+  const sessions = Array.isArray(data) ? data
+    : (data && Array.isArray(data.sessions) ? data.sessions : null);
+  if (!sessions) return null;
+  const valid = [], seen = {};
+  sessions.forEach(s => {
+    if (s && typeof s === 'object' && Array.isArray(s.items) && (s.mode || s.items.length)){
+      if (!s.id) s.id = 'imp' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+      if (seen[s.id]) return;
+      seen[s.id] = 1; valid.push(s);
+    }
+  });
+  return valid;
+}
+/* 与本地记录按 id 合并，可选套用设置；返回新增轮数 */
+function mergeImported(data){
+  const valid = normalizeImport(data);
+  if (!valid) return {added:0, ok:false};
+  const have = {};
+  Store.sessions.forEach(s => { if (s && s.id) have[s.id] = 1; });
+  let added = 0;
+  valid.forEach(s => { if (!have[s.id]){ Store.sessions.unshift(s); added++; } });
+  if (Store.sessions.length > 400) Store.sessions.length = 400;
+  let appliedSet = false;
+  if (data && data.settings && typeof data.settings === 'object'){
+    Store.settings = Object.assign({}, DEFAULT_SETTINGS, data.settings);
+    if (Store.settings.mode === 'read') Store.settings.mode = Store.settings.readType === 'interval' ? 'readiv' : 'readnote';
+    appliedSet = true;
+  }
+  Store.save();
+  if (appliedSet) Store.saveSettings();
+  return {added:added, ok:true, appliedSet:appliedSet};
+}
+function importJSON(){
+  const inp = $('#fileImport'); if (!inp) return;
+  inp.value = '';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try { data = JSON.parse(reader.result); }
+      catch(e){ toast('文件不是有效的 JSON'); return; }
+      const r = mergeImported(data);
+      if (!r.ok){ toast('文件中没有可导入的练习记录'); return; }
+      applyTheme(Store.settings.themeColor);
+      renderSettingsStatic(); renderModeOpts(); renderModebar();
+      renderRecords();
+      toast('已导入 ' + r.added + ' 轮记录' + (r.appliedSet ? ' 与设置' : ''));
+    };
+    reader.readAsText(f);
+  };
+  inp.click();
+}
+
+/* ------------------------------------------------------- 12b. 工具页 */
+const SCALES = {
+  major:    {name:'大调',     iv:[0,2,4,5,7,9,11,12]},
+  minor:    {name:'自然小调', iv:[0,2,3,5,7,8,10,12]},
+  harmonic: {name:'和声小调', iv:[0,2,3,5,7,8,11,12]},
+  penta:    {name:'五声音阶', iv:[0,2,4,7,9,12]},
+  blues:    {name:'布鲁斯',   iv:[0,3,5,6,7,10,12]}
+};
+const Tools = {
+  read:{midi:null, revealed:false, msg:'', ok:false},
+  scale:{type:'major', dir:'up', root:60},
+  chord:{id:'maj', style:'block', root:60},
+  iv:7
+};
+function toolStaffInner(){
+  const t = Tools.read, st = Store.settings;
+  if (t.midi == null) return '<p class="hint">点「随机出题」开始，然后在下方键盘上点出你看到的音</p>';
+  return '<div style="width:100%;max-width:400px">'+ staffFor([t.midi], st.clef) +'</div>';
+}
+function readMsgText(){
+  const t = Tools.read;
+  if (t.msg) return t.msg;
+  return t.midi == null
+    ? '选好谱号后随机出一题，用下方键盘作答（点错可以继续试）'
+    : '在下方键盘上点出你看到的音；也可以点「显示答案」直接看';
+}
+function toolReadHTML(){
+  const st = Store.settings;
+  return '<div class="card">'+
+    '<div class="card-head"><h3 style="font-size:14px">🎼 看谱找音</h3>'+
+      '<span class="tag gray">不计分</span><div class="spacer"></div>'+
+      '<div class="chips">'+
+        '<button class="chip'+(st.clef==='treble'?' on':'')+'" data-tool="clef" data-val="treble">高音谱</button>'+
+        '<button class="chip'+(st.clef==='bass'?' on':'')+'" data-tool="clef" data-val="bass">低音谱</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="tool-staff-box" id="toolStaff">'+ toolStaffInner() +'</div>'+
+    '<div class="qactions">'+
+      '<button class="btn primary" id="btnToolRoll">🎲 随机出题</button>'+
+      '<button class="btn" id="btnToolHear">🔊 听一听</button>'+
+      '<button class="btn" id="btnToolShow">👁 显示答案</button>'+
+    '</div>'+
+    '<p class="hint fb-msg" id="toolReadMsg">'+ readMsgText() +'</p>'+
+  '</div>';
+}
+function toolScaleHTML(){
+  const s = Tools.scale;
+  return '<div class="card">'+
+    '<div class="card-head"><h3 style="font-size:14px">🎵 音阶播放</h3></div>'+
+    '<div class="row"><span class="hint" style="flex:none;width:36px">主音</span>'+
+      '<select class="sel" id="toolScaleRoot">'+ noteOptions(48, 72, s.root) +'</select></div>'+
+    '<div class="chips" style="margin-top:9px">'+ Object.keys(SCALES).map(k =>
+      '<button class="chip'+(s.type===k?' on':'')+'" data-tool="scaleType" data-val="'+k+'">'+SCALES[k].name+'</button>').join('') +'</div>'+
+    '<div class="chips" style="margin-top:6px">'+
+      '<button class="chip'+(s.dir==='up'?' on':'')+'" data-tool="scaleDir" data-val="up">上行</button>'+
+      '<button class="chip'+(s.dir==='updown'?' on':'')+'" data-tool="scaleDir" data-val="updown">上下行</button>'+
+    '</div>'+
+    '<div class="qactions"><button class="btn primary" id="btnToolScale" style="flex:1">▶ 播放音阶</button></div>'+
+    '<div class="note-strip" id="toolScaleNotes"><span class="hint">点播放后这里会显示所弹的音</span></div>'+
+    '<p class="hint">先听一遍，再跟着唱，最后不跟音频自己唱——视唱练耳最有效的顺序。</p>'+
+  '</div>';
+}
+function toolChordHTML(){
+  const c = Tools.chord;
+  return '<div class="card">'+
+    '<div class="card-head"><h3 style="font-size:14px">🎹 和弦试听</h3></div>'+
+    '<div class="row"><span class="hint" style="flex:none;width:36px">根音</span>'+
+      '<select class="sel" id="toolChordRoot">'+ noteOptions(48, 76, c.root) +'</select></div>'+
+    '<div class="chips" style="margin-top:9px">'+ CHORDS.map(x =>
+      '<button class="chip'+(c.id===x.id?' on':'')+'" data-tool="chordId" data-val="'+x.id+'">'+x.cn+'<span class="sub">'+x.ab+'</span></button>').join('') +'</div>'+
+    '<div class="chips" style="margin-top:6px">'+
+      '<button class="chip'+(c.style==='block'?' on':'')+'" data-tool="chordStyle" data-val="block">柱式</button>'+
+      '<button class="chip'+(c.style==='up'?' on':'')+'" data-tool="chordStyle" data-val="up">分解上行</button>'+
+      '<button class="chip'+(c.style==='updown'?' on':'')+'" data-tool="chordStyle" data-val="updown">分解上下行</button>'+
+    '</div>'+
+    '<div class="qactions"><button class="btn primary" id="btnToolChord" style="flex:1">▶ 播放和弦</button></div>'+
+    '<div class="note-strip" id="toolChordNotes"><span class="hint">点播放后这里会显示所弹的音</span></div>'+
+    '<p class="hint">先听柱式抓住整体色彩，再听分解听清每个音的位置。</p>'+
+  '</div>';
+}
+function toolIvHTML(){
+  const st = Store.settings;
+  return '<div class="card">'+
+    '<div class="card-head"><h3 style="font-size:14px">📐 音程试听</h3>'+
+      '<span class="tag gray">自 '+fullName(st.refMidi)+' 起</span></div>'+
+    '<div class="opt-grid g13">'+ INTERVALS.map(i =>
+      '<button class="opt small'+(Tools.iv===i.s?' on':'')+'" data-tool="iv" data-val="'+i.s+'"><b>'+i.cn+'</b><span>'+i.ab+'</span></button>').join('') +'</div>'+
+    '<div class="note-strip" id="toolIvNotes"><span class="hint">点任意音程后这里会显示所弹的音</span></div>'+
+    '<p class="hint">点任意音程，从当前基准音向上播放；可反复听、反复跟唱。</p>'+
+  '</div>';
+}
+function toolKbHTML(){
+  const st = Store.settings;
+  return '<div class="kbwrap">'+
+    '<div class="kbhead"><h3>🎹 自由键盘</h3>'+
+      '<span class="hint" id="toolKbHint">点击琴键发声</span>'+
+      '<div class="spacer"></div>'+
+      '<div class="chips">'+
+        [['name','音名'],['solfege','唱名'],['none','隐藏']].map(x =>
+          '<button class="chip'+(st.toolLabel===x[0]?' on':'')+'" data-tool="kblabel" data-val="'+x[0]+'">'+x[1]+'</button>').join('')+
+      '</div>'+
+    '</div>'+
+    '<div class="tool-readout" id="toolReadout"><b>—</b><span>点击下方琴键开始</span></div>'+
+    '<div class="kbscroll"><div class="keyboard" id="toolKb"></div></div>'+
+  '</div>';
+}
+function renderTools(){
+  const root = $('#toolsRoot'); if (!root) return;
+  root.innerHTML =
+    '<div class="tools-grid">'+
+      toolReadHTML() + toolScaleHTML() + toolChordHTML() + toolIvHTML() +
+    '</div>'+
+    toolKbHTML();
+  wireTools();
+}
+function toolKeys(){ return $$('#toolKb .key'); }
+function clearToolMarks(){
+  toolKeys().forEach(k => k.classList.remove('lit','correct','wrong'));
+}
+function buildToolKeyboard(){
+  const kb = $('#toolKb'); if (!kb) return;
+  const st = Store.settings;
+  pianoHTML(kb, st.toolLow, st.toolHigh, {labelMode: st.toolLabel, clickable:true});
+  kb.classList.add('tool-kb');
+  toolKeys().forEach(k => { k.onclick = () => toolKeyPress(Number(k.dataset.midi)); });
+}
+function refreshReadTool(){
+  const box = $('#toolStaff'); if (box) box.innerHTML = toolStaffInner();
+  const msg = $('#toolReadMsg');
+  if (msg){
+    msg.textContent = readMsgText();
+    msg.className = 'hint fb-msg' + (Tools.read.msg ? (Tools.read.ok ? ' ok' : ' bad') : '');
+  }
+}
+function updateReadout(midi){
+  const el = $('#toolReadout'); if (!el) return;
+  el.innerHTML = '<b>'+fullName(midi)+'</b><span>'+solfege(midi)+' · '+Math.round(mtof(midi))+' Hz</span>';
+}
+/* 工具页键盘点击：始终发声并显示音名；若在「看谱找音」作答中则顺带判对错 */
+function toolKeyPress(midi){
+  Audio2.resume();
+  Audio2.play([midi], {type:'single', dur:1.05, vel:.85});
+  updateReadout(midi);
+  const keys = toolKeys();
+  keys.forEach(k => k.classList.remove('lit'));
+  keys.filter(k => Number(k.dataset.midi) === midi).forEach(k => k.classList.add('lit'));
+  const t = Tools.read;
+  if (t.midi != null && !t.revealed){
+    if (midi === t.midi){
+      t.ok = true; t.revealed = true;
+      t.msg = '✓ 正确！这个音就是 ' + fullName(midi) + '（' + solfege(midi) + '）';
+      keys.filter(k => Number(k.dataset.midi) === midi).forEach(k => { k.classList.remove('lit'); k.classList.add('correct'); });
+    } else {
+      t.ok = false;
+      t.msg = '✗ 你点的是 ' + fullName(midi) + '，再对着谱面数一数线间';
+    }
+    refreshReadTool();
+  }
+}
+function wireTools(){
+  buildToolKeyboard();
+  /* 胶囊按钮统一走事件委托 */
+  const root = $('#toolsRoot');
+  if (root && !root._delegated){
+    root._delegated = true;
+    root.addEventListener('click', e => {
+      const b = e.target.closest ? e.target.closest('[data-tool]') : null;
+      if (!b) return;
+      const kind = b.dataset.tool, val = b.dataset.val, st = Store.settings;
+      if (kind === 'clef'){ st.clef = val; Store.saveSettings(); }
+      else if (kind === 'scaleType'){ Tools.scale.type = val; }
+      else if (kind === 'scaleDir'){ Tools.scale.dir = val; }
+      else if (kind === 'chordId'){ Tools.chord.id = val; }
+      else if (kind === 'chordStyle'){ Tools.chord.style = val; }
+      else if (kind === 'kblabel'){ st.toolLabel = val; Store.saveSettings(); renderTools(); return; }
+      else if (kind === 'iv'){ Tools.iv = Number(val); }
+      const group = b.parentElement;
+      if (group) $$('[data-tool="'+kind+'"]', group).forEach(x => x.classList.toggle('on', x === b));
+      if (kind === 'clef') refreshReadTool();
+      if (kind === 'iv') playToolIv();
+    });
+  }
+  const roll = $('#btnToolRoll'); if (roll) roll.onclick = toolRoll;
+  const hear = $('#btnToolHear'); if (hear) hear.onclick = () => {
+    if (Tools.read.midi == null) return toolRoll();
+    Audio2.resume(); Audio2.play([Tools.read.midi], {type:'single', dur:1.1, vel:.85});
+  };
+  const show = $('#btnToolShow'); if (show) show.onclick = () => {
+    const t = Tools.read; if (t.midi == null) return toolRoll();
+    t.revealed = true; t.ok = true;
+    t.msg = '答案：' + fullName(t.midi) + '（' + solfege(t.midi) + '），已为你播放一次';
+    Audio2.resume(); Audio2.play([t.midi], {type:'single', dur:1.1, vel:.85});
+    const keys = toolKeys();
+    keys.forEach(k => k.classList.remove('lit'));
+    keys.filter(k => Number(k.dataset.midi) === t.midi).forEach(k => k.classList.add('correct'));
+    updateReadout(t.midi);
+    refreshReadTool();
+  };
+  const sc = $('#btnToolScale'); if (sc) sc.onclick = playToolScale;
+  const ch = $('#btnToolChord'); if (ch) ch.onclick = playToolChord;
+  const sr = $('#toolScaleRoot');
+  if (sr) sr.onchange = () => { Tools.scale.root = Number(sr.value); };
+  const cr = $('#toolChordRoot');
+  if (cr) cr.onchange = () => { Tools.chord.root = Number(cr.value); };
+}
+function toolRoll(){
+  const st = Store.settings;
+  const pool = notePool({natural: st.accid === 'natural'});
+  let m = pick(pool), guard = 0;
+  while (m === Tools.read.midi && guard++ < 20) m = pick(pool);
+  Tools.read = {midi:m, revealed:false, msg:'', ok:false};
+  clearToolMarks();
+  refreshReadTool();
+}
+/* 播放并在展示条上依次点亮所弹的音 */
+const stripTimers = {};
+function stripClearAll(){
+  Object.keys(stripTimers).forEach(k => {
+    (stripTimers[k] || []).forEach(t => clearTimeout(t));
+    stripTimers[k] = [];
+  });
+  $$('.note-strip .nc').forEach(c => c.classList.remove('on'));
+}
+function stripPlay(stripId, notes, opt, label){
+  Audio2.resume(); Audio2.stopAll(); stripClearAll();
+  if (!stripTimers[stripId]) stripTimers[stripId] = [];
+  const box = $(stripId);
+  const chipsHTML = notes.map(n => '<span class="nc">'+fullName(n)+'</span>').join('');
+  if (box) box.innerHTML = (label ? '<span class="nc plain">'+label+'</span>' : '') + chipsHTML;
+  const ms = Audio2.play(notes, opt) || 700;
+  const chips = box ? $$('.nc', box).filter(c => !c.classList.contains('plain')) : [];
+  const gap = (opt.gap || .4) * 1000;
+  if (opt.type === 'chord'){
+    chips.forEach(c => c.classList.add('on'));
+  } else {
+    chips.forEach((c, i) => {
+      stripTimers[stripId].push(setTimeout(() => {
+        chips.forEach(x => x.classList.remove('on'));
+        c.classList.add('on');
+      }, i * gap));
+    });
+  }
+  stripTimers[stripId].push(setTimeout(() => chips.forEach(c => c.classList.remove('on')), ms + 140));
+}
+function playToolScale(){
+  const sc = SCALES[Tools.scale.type] || SCALES.major;
+  const root = Number(($('#toolScaleRoot') || {}).value) || Tools.scale.root;
+  Tools.scale.root = root;
+  let notes = sc.iv.map(v => root + v);
+  if (Tools.scale.dir === 'updown') notes = notes.concat(notes.slice(1, -1).reverse());
+  stripPlay('#toolScaleNotes', notes, {type:'seq', dur:.5, gap:.36, vel:.8}, pname(root)+' '+sc.name);
+}
+function playToolChord(){
+  const c = CHORD_BY_ID[Tools.chord.id] || CHORD_BY_ID.maj;
+  const root = Number(($('#toolChordRoot') || {}).value) || Tools.chord.root;
+  Tools.chord.root = root;
+  const base = chordNotes(root, c.iv);
+  const notes = Tools.chord.style === 'block' ? base
+              : (Tools.chord.style === 'updown' ? base.concat(base.slice(1, -1).reverse()) : base);
+  stripPlay('#toolChordNotes', notes, {
+    type: Tools.chord.style === 'block' ? 'chord' : 'seq',
+    dur: Tools.chord.style === 'block' ? 1.7 : .85, gap:.42, vel:.8
+  }, fullName(root)+' '+c.cn);
+}
+function playToolIv(){
+  const base = Store.settings.refMidi;
+  const iv = INTERVALS.filter(x => x.s === Tools.iv)[0] || INTERVALS[6];
+  stripPlay('#toolIvNotes', [base, base + Tools.iv], {type:'seq', dur:.95, gap:.72, vel:.85}, iv.cn);
+}
+
+/* ------------------------------------------------------- 13. 全局装配 */
+function switchView(v){
+  $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  $('#view-practice').classList.toggle('on', v === 'practice');
+  $('#view-tools').classList.toggle('on', v === 'tools');
+  $('#view-records').classList.toggle('on', v === 'records');
+  if (v === 'records') renderRecords();
+  if (v === 'tools') renderTools();
+  if (v === 'practice' && Quiz.live) renderStage();
+}
+function setMode(mode){
+  const st = Store.settings;
+  if (st.mode === mode) return;
+  /* 切换模块时结束进行中的本轮，避免状态错乱 */
+  Quiz.live = false; clearTimeout(Quiz.timer); Audio2.stopAll();
+  Quiz.items = []; Quiz.qIndex = 0; Quiz.correct = 0; Quiz.streak = 0; Quiz.cur = null;
+  st.mode = mode;
+  st.groupLast = st.groupLast || {};
+  st.groupLast[groupOf(mode)] = mode;
+  Store.saveSettings();
+  syncGroupTabs();
+  renderModebar(); renderModeOpts(); renderStage();
+  if ($('#keyboard')) Keyboard.build();
+}
+function renderGroupTabs(){
+  const box = $('#groupTabs'); if (!box) return;
+  const g = groupOf(Store.settings.mode);
+  box.innerHTML = MODE_GROUPS.map(x =>
+    '<button class="grouptab'+(x.id===g?' on':'')+'" data-group="'+x.id+'">'+
+      '<span class="gi">'+x.icon+'</span>'+x.name+
+    '</button>').join('');
+  $$('button', box).forEach(b => {
+    b.onclick = () => {
+      const gid = b.dataset.group;
+      if (groupOf(Store.settings.mode) === gid) return;
+      const st = Store.settings;
+      const last = (st.groupLast && st.groupLast[gid]) || modesOf(gid)[0];
+      setMode(last);
+    };
+  });
+}
+function syncGroupTabs(){
+  const g = groupOf(Store.settings.mode);
+  $$('#groupTabs .grouptab').forEach(b => b.classList.toggle('on', b.dataset.group === g));
+}
+function renderModebar(){
+  const bar = $('#modebar'); if (!bar) return;
+  const g = groupOf(Store.settings.mode);
+  bar.innerHTML = modesOf(g).map(k => {
+    const m = MODES[k];
+    return '<button data-mode="'+k+'" class="'+(Store.settings.mode===k?'on':'')+'">'+
+      '<span class="mi">'+m.icon+'</span>'+m.name+'</button>';
+  }).join('');
+  $$('button', bar).forEach(b => { b.onclick = () => setMode(b.dataset.mode); });
+}
+function bindSettings(){
+  $('#selRef').onchange = e => { Store.settings.refMidi = Number(e.target.value); Store.saveSettings(); renderRangeHint(); renderStage(); };
+  $('#selLow').onchange = e => {
+    const v = Number(e.target.value);
+    if (v > Store.settings.highMidi) Store.settings.highMidi = Math.min(96, v + 12);
+    Store.settings.lowMidi = v;
+    $('#selHigh').value = Store.settings.highMidi;
+    Store.saveSettings(); renderRangeHint(); syncChips(); renderStage();
+  };
+  $('#selHigh').onchange = e => {
+    const v = Number(e.target.value);
+    if (v < Store.settings.lowMidi) Store.settings.lowMidi = Math.max(33, v - 12);
+    Store.settings.highMidi = v;
+    $('#selLow').value = Store.settings.lowMidi;
+    Store.saveSettings(); renderRangeHint(); syncChips(); renderStage();
+  };
+  $('#selTimbre').onchange = e => { Store.settings.timbre = e.target.value; Store.saveSettings(); toast('音色：'+e.target.selectedOptions[0].text); };
+  $('#selRound').onchange = e => { Store.settings.perRound = Number(e.target.value); Store.saveSettings(); renderStage(); };
+  $('#btnTestRef').onclick = () => { Audio2.resume(); Audio2.play([Store.settings.refMidi], {type:'single', dur:1.2, vel:.85}); };
+  $$('.chip[data-range]').forEach(b => {
+    b.onclick = () => {
+      const span = Number(b.dataset.range);
+      const st = Store.settings;
+      let lo = nearestWhiteDown(st.lowMidi);
+      let hi = lo + span - 1;
+      if (hi > 96){ hi = 96; lo = 96 - span + 1; }
+      st.lowMidi = Math.max(33, lo); st.highMidi = hi;
+      $('#selLow').value = st.lowMidi; $('#selHigh').value = st.highMidi;
+      Store.saveSettings(); renderRangeHint(); syncChips(); renderStage();
+      const kb = $('#kbSection'); if (kb) Keyboard.build();
+    };
+  });
+  $$('#chipsRefMode .chip').forEach(b => {
+    b.onclick = () => { Store.settings.refMode = b.dataset.refmode; Store.saveSettings(); syncChips(); renderStage(); };
+  });
+  $$('#chipsExtra .chip').forEach(b => {
+    b.onclick = () => {
+      const f = b.dataset.flag;
+      Store.settings[f] = !Store.settings[f];
+      Store.saveSettings(); syncChips();
+      const kb = $('#kbSection'); if (kb) Keyboard.build();
+    };
+  });
+  $('#modeOpts').addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    const st = Store.settings;
+    if (c.dataset.opt){
+      st[c.dataset.opt] = c.dataset.val;
+      Store.saveSettings(); renderModeOpts(); renderStage();
+      const kb = $('#kbSection'); if (kb) Keyboard.build();
+      return;
+    }
+    if (c.dataset.iv != null){
+      const v = Number(c.dataset.iv);
+      const i = st.intervalSet.indexOf(v);
+      if (i >= 0){ if (st.intervalSet.length > 1) st.intervalSet.splice(i,1); }
+      else st.intervalSet.push(v);
+      st.intervalSet.sort((a,b) => a-b);
+      c.classList.toggle('on');
+      Store.saveSettings(); if (Quiz.cur && !Quiz.answered) renderStage();
+      return;
+    }
+    if (c.dataset.ch){
+      const v = c.dataset.ch;
+      const i = st.chordSet.indexOf(v);
+      if (i >= 0){ if (st.chordSet.length > 1) st.chordSet.splice(i,1); }
+      else st.chordSet.push(v);
+      c.classList.toggle('on');
+      Store.saveSettings();
+      if (!Quiz.live && Quiz.cur && !Quiz.answered) renderStage();
+      return;
+    }
+  });
+  $('#btnResetSettings').onclick = () => {
+    Store.settings = Object.assign({}, DEFAULT_SETTINGS);
+    Store.saveSettings();
+    renderSettingsStatic(); renderModeOpts(); renderModebar();
+    applyTheme(Store.settings.themeColor);
+    Quiz.items = []; Quiz.live = false; clearTimeout(Quiz.timer);
+    renderStage();
+    toast('已恢复默认设置');
+  };
+  $('#settingsHead').onclick = (e) => {
+    if (window.innerWidth > 940) return;
+    if (e.target.id === 'btnToggleSettings') return;
+    toggleSettingsPanel();
+  };
+  const tb = $('#btnToggleSettings');
+  if (tb) tb.onclick = (e) => { e.stopPropagation(); toggleSettingsPanel(); };
+  $('#btnVol').onclick = toggleVolume;
+}
+function toggleSettingsPanel(){
+  const p = $('#settingsPanel');
+  p.classList.toggle('collapsed');
+  const b = $('#btnToggleSettings');
+  if (b) b.textContent = p.classList.contains('collapsed') ? '展开' : '收起';
+}
+function toggleVolume(){
+  Audio2.resume();
+  Audio2.muted = !Audio2.muted;
+  if (Audio2.master) Audio2.master.gain.value = Audio2.muted ? 0 : Store.settings.volume;
+  $('#btnVol').textContent = Audio2.muted ? '🔇' : '🔊';
+  toast(Audio2.muted ? '已静音' : '已开启声音');
+}
+function bindKeys(){
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+    if (e.code === 'Space' || e.key === ' '){
+      e.preventDefault();
+      if (Quiz.live && Quiz.cur) Quiz.playQuestion();
+      else { const s = $('#btnStart'); if (s) s.click(); }
+      return;
+    }
+    if (e.key === 'Enter'){
+      const n = $('#btnNext');
+      if (n){ e.preventDefault(); Quiz.advance(); }
+      return;
+    }
+    if (!Quiz.live || !Quiz.cur || Quiz.answered) return;
+    if (e.key === 'r' || e.key === 'R'){ Audio2.stopAll(); Quiz.playRef(); return; }
+    if (Quiz.cur.answer.type === 'degree' && /^[1-7]$/.test(e.key)){
+      const btn = $('[data-ans="'+e.key+'"]');
+      if (btn) btn.click();
+    }
+  });
+}
+let rzTimer = null;
+function bindResize(){
+  const onRz = () => {
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(() => {
+      if ($('#keyboard')) Keyboard.build();
+      /* 只在工具页可见时重建，隐藏时容器测不到宽度会画窄 */
+      if ($('#toolKb') && $('#view-tools').classList.contains('on')) buildToolKeyboard();
+      if ($('#view-records').classList.contains('on')) renderRecords();
+    }, 150);
+  };
+  window.addEventListener('resize', onRz);
+  window.addEventListener('orientationchange', () => setTimeout(onRz, 320));
+}
+function init(){
+  Store.load();
+  applyTheme(Store.settings.themeColor);
+  Audio2.init();
+  renderSettingsStatic();
+  renderGroupTabs();
+  renderModebar();
+  renderModeOpts();
+  renderStage();
+  bindSettings();
+  bindKeys();
+  bindResize();
+  $$('.tabs button').forEach(b => { b.onclick = () => switchView(b.dataset.view); });
+  const panel = $('#settingsPanel');
+  if (window.innerWidth <= 940) panel.classList.add('collapsed');
+  const tb = $('#btnToggleSettings');
+  if (tb) tb.textContent = panel.classList.contains('collapsed') ? '展开' : '收起';
+  const unlock = () => {
+    Audio2.resume();
+    document.removeEventListener('pointerdown', unlock);
+    document.removeEventListener('keydown', unlock);
+  };
+  document.addEventListener('pointerdown', unlock);
+  document.addEventListener('keydown', unlock);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+</body>
+</html>
